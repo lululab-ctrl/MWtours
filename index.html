@@ -104,12 +104,11 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .top .name{min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip{display:inline-flex;align-items:center;gap:6px;height:32px;background:none;cursor:pointer;font-family:inherit;padding-inline:10px;border-radius:var(--pill);border:1px solid rgba(232,162,62,.45);color:var(--paper);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .chip .ic{width:14px;height:14px;color:var(--amber)}
-.backbtn{flex:none;display:inline-flex;align-items:center;gap:4px;height:36px;padding-inline:8px 14px;border-radius:var(--pill);border:1px solid rgba(244,175,86,.55);background:rgba(244,175,86,.1);color:var(--paper);font:700 13px/1 var(--sans);cursor:pointer;white-space:nowrap;transition:background-color .3s,transform .3s var(--ease)}
-.backbtn:hover{background:rgba(244,175,86,.2)}
+.backbtn{position:fixed;z-index:26;top:calc(var(--top) + env(safe-area-inset-top) + 12px);inset-inline-start:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:inline-flex;align-items:center;gap:4px;height:36px;padding-inline:8px 14px;border-radius:var(--pill);border:1px solid rgba(244,175,86,.55);background:rgba(10,9,8,.72);color:var(--paper);font:700 14px/1 var(--sans);cursor:pointer;white-space:nowrap;height:40px;transition:background-color .3s,transform .3s var(--ease)}
+.backbtn:hover{background:rgba(30,24,18,.86)}
 .backbtn:active{transform:scale(.96)}
 .backbtn .ic{width:18px;height:18px;color:var(--gold)}
 [dir=rtl] .backbtn .ic{transform:scaleX(-1)}
-.top.has-back .mark{display:none}
 .top .end{margin-inline-start:auto;display:flex;align-items:center;gap:8px}
 .tabs{position:fixed;inset-inline:0;bottom:0;z-index:30;height:calc(var(--bar) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(5,1fr);
   background:rgba(10,9,8,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--rule);transition:transform .8s var(--ease)}
@@ -669,8 +668,8 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
   </section>
 
   <div id="shell" hidden>
+    <button class="backbtn" id="back" type="button" hidden><svg class="ic"><use href="#i-prev"/></svg><span></span></button>
     <header class="top">
-      <button class="backbtn" id="back" type="button" hidden><svg class="ic"><use href="#i-prev"/></svg><span></span></button>
       <span class="mark" role="img" aria-label="MW Photo Tours"></span>
       <span class="name" id="top-name"></span>
       <div class="end">
@@ -782,7 +781,7 @@ const UI = {
     play: 'הפעלת המסלול', pause: 'עצירה', all: 'כל הדרך', assam: 'מבט על אסאם', opening: 'צפייה בפתיחה', skip: 'דלגו',
     toGo: n => n === 1 ? 'מחר ממריאים' : `עוד ${n} ימים להמראה`, hoursToGo: n => `עוד ${n} שעות להמראה`,
     chip: n => n === 1 ? 'מחר' : `עוד ${n} ימים`, chipHours: n => `עוד ${n} שעות`,
-    back: n => n >= 0 ? `חזרה ליום ${pad2(n)}` : 'חזרה למפה',
+    back: 'חזרה',
     during: n => n === 0 ? 'היום יוצאים לדרך' : `היום: יום ${pad2(n)} מתוך 09`, chipDuring: n => n === 0 ? 'יוצאים' : `יום ${pad2(n)}`,
     after: 'המסע הסתיים. תודה שהייתם איתנו.',
     weekday: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
@@ -814,7 +813,7 @@ const UI = {
     play: 'Play the route', pause: 'Pause', all: 'The whole way', assam: 'Assam overview', opening: 'Watch the opening', skip: 'Skip',
     toGo: n => n === 1 ? 'We fly tomorrow' : `${n} days to take-off`, hoursToGo: n => `${n} hours to take-off`,
     chip: n => n === 1 ? 'Tomorrow' : `${n} days`, chipHours: n => `${n} hours`,
-    back: n => n >= 0 ? `Back to day ${pad2(n)}` : 'Back to map',
+    back: 'Back',
     during: n => n === 0 ? 'Today we set off' : `Today: day ${pad2(n)} of 09`, chipDuring: n => n === 0 ? 'Departing' : `Day ${pad2(n)}`,
     after: 'The expedition is over. Thank you for coming with us.',
     weekday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -2111,8 +2110,8 @@ $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-ta
 let backDay = -1;
 function renderBack() {
   const b = $('#back'), off = tab === 'route';
-  b.hidden = off; b.closest('.top').classList.toggle('has-back', !off);
-  b.lastElementChild.textContent = L.back(backDay); b.setAttribute('aria-label', L.back(backDay));
+  b.hidden = off;
+  b.lastElementChild.textContent = L.back;
 }
 $('#back').addEventListener('click', () => {
   const n = backDay;
