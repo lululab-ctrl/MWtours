@@ -918,28 +918,52 @@ const EXTRA_PHOTOS = [
   { re: /danc|bagurumba|bihu|bodo|ריקוד|בגורומבה|ביהו|בודו/i, img: 'bodo-dance' },
   { re: /bhutan|himalaya|mountain|foothill|בהוטן|הימלאי|הרים|מרגלות/i, img: 'mountain-river' },
   { re: /river|beki|brahmaputra|נהר|בקי|ברהמפוטרה/i, img: 'manas-river' },
-  // last resort by kind, for a story whose title names none of the above
-  { re: /^$/, img: 'bodo-dance', kind: 'culture' },
 ];
-function fillPhotos(T) {
-  const words = o => [o.id, ...['en', 'he'].map(l => o[l] ? [o[l].title, o[l].name].filter(Boolean).join(' ') : '')].join(' ');   // titles only, so a passing mention doesn't pull in the wrong photo
-  const fill = list => {
-    const used = new Set(list.map(o => o.photo).filter(Boolean));
-    for (const o of list || []) {
-      if (o.photo) continue;
-      const w = words(o), hit = EXTRA_PHOTOS.find(p => !used.has(`photos/${p.img}.jpg`) && ((p.kind && o.kind === p.kind) || p.re.test(w)));
-      if (!hit) continue;
-      o.photo = `photos/${hit.img}.jpg`; o.thumb = o.thumb || `photos/thumb/${hit.img}.jpg`; used.add(o.photo);
+// last resort by kind, when neither the title nor the text names anything above
+const KIND_PHOTOS = {
+  // no wildlife fallback on purpose: a story about one animal must never show another
+  culture: ['bodo-dance'], food: ['assamese-thali'],
+  history: ['tea-garden', 'mountain-river', 'manas-river'], legend: ['manas-river', 'mountain-river', 'tea-garden'],
+  exercise: ['tea-garden', 'mountain-river', 'manas-river', 'pugmark'],
+};
+// a photo the content points at but that isn't on the site (404) counts as missing
+async function missingFiles(paths) {
+  const gone = new Set();
+  await Promise.race([
+    Promise.all([...new Set(paths)].filter(p => p && !/^(https?:|data:)/.test(p)).map(p =>
+      fetch(p, { method: 'HEAD', cache: 'no-cache' }).then(r => { if (r.status === 404) gone.add(p); }).catch(() => {}))),
+    wait(2500)]);
+  return gone;
+}
+async function fillPhotos(T) {
+  try {
+    const lists = [[T.stories, null], ...(T.field ? [[T.field.animals, null], [T.field.exercises, 'exercise']] : [])].filter(([l]) => Array.isArray(l));
+    const gone = await missingFiles(lists.flatMap(([l]) => l.flatMap(o => [o.photo, o.thumb])));
+    for (const [l] of lists) for (const o of l) { if (gone.has(o.photo)) delete o.photo; if (gone.has(o.thumb)) delete o.thumb; if (!o.photo && o.thumb) delete o.thumb; }
+    const title = o => [o.id, ...['en', 'he'].map(k => o[k] ? [o[k].title, o[k].name].filter(Boolean).join(' ') : '')].join(' ');
+    const text = o => ['en', 'he'].map(k => o[k] ? Object.values(o[k]).flat().filter(v => typeof v === 'string').join(' ') : '').join(' ');
+    const put = (o, img, used) => { o.photo = `photos/${img}.jpg`; o.thumb = `photos/thumb/${img}.jpg`; used.add(o.photo); };
+    for (const [l, kindOf] of lists) {
+      const used = new Set(l.map(o => o.photo).filter(Boolean)), free = img => !used.has(`photos/${img}.jpg`);
+      for (const pass of [title, text]) for (const o of l) {
+        if (o.photo) continue;
+        const w = pass(o), hit = EXTRA_PHOTOS.find(p => free(p.img) && ((p.kind && o.kind === p.kind) || p.re.test(w)));
+        if (hit) put(o, hit.img, used);
+      }
+      for (const o of l) {
+        if (o.photo) continue;
+        const img = (KIND_PHOTOS[kindOf || o.kind] || []).find(free);
+        if (img) put(o, img, used);
+      }
     }
-  };
-  try { fill(T.stories); if (T.field) { fill(T.field.animals); fill(T.field.exercises); } } catch (e) {}
+  } catch (e) {}
 }
 async function tryCode(code, quiet) {
   const err = $('#gate-err'), btn = $('#gate-btn'), form = $('#gate-form');
   if (!norm(code)) { if (!quiet) err.textContent = L.gateEmpty; return false; }
   btn.disabled = true; btn.firstElementChild.textContent = L.gateBusy; err.textContent = '';
   try {
-    T = await decrypt(code); fillPhotos(T);
+    T = await decrypt(code); await fillPhotos(T);
   } catch (e) {
     if (!quiet) { err.textContent = L.gateErr; form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); $('#code').select(); }
     btn.disabled = false; btn.firstElementChild.textContent = L.gateBtn;
