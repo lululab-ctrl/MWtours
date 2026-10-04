@@ -243,6 +243,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .mfilter button{flex:none;display:inline-flex;align-items:center;gap:6px;height:38px;padding-inline:12px;border-radius:var(--pill);border:1px solid rgba(231,224,221,.24);background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--muted);font-size:13px;cursor:pointer;transition:border-color .3s,color .3s,background-color .3s}
 .mfilter button .ic{width:15px;height:15px;color:var(--k,var(--gold-soft))}
 .mfilter button[aria-pressed=true]{border-color:var(--k,var(--gold-soft));color:var(--paper);background:rgba(10,9,8,.86)}
+.mfilter button em{font-style:normal}
 .mfilter button span{font-variant-numeric:tabular-nums;opacity:.6;font-size:12px}
 
 /* the foot of the map: a slim day timeline, and one small card above it */
@@ -580,6 +581,15 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
   .toast{bottom:28px}
 }
 @media (max-width:759px){
+  /* phones: a quiet top row. Only the chosen filter shows its name; the rest are small icons. */
+  .mfilter{inset-inline-end:58px;gap:6px}
+  .mfilter button{height:36px;padding-inline:12px;font-size:13px}
+  .mfilter button span{display:none}
+  .mfilter button:not([aria-pressed=true]){width:36px;padding:0;justify-content:center}
+  .mfilter button:not([aria-pressed=true]) em{display:none}
+  .mapctl{gap:6px}
+  .mapctl .icbtn{width:38px;height:38px}
+  .mapctl .icbtn .ic{width:18px;height:18px}
   #pop{left:10px!important;right:10px;top:auto!important;bottom:calc(var(--bar) + env(safe-area-inset-bottom) + 10px);width:auto;max-height:min(68vh,580px)}
   #pop.in{animation:sheetIn .55s var(--ease)}
   #pop .ph{aspect-ratio:16/9}
@@ -1526,7 +1536,7 @@ function renderFilter() {
   const kinds = ['all', ...Object.keys(L.s.kinds).filter(k => T.stories.some(s => s.kind === k))];
   $('#mfilter').innerHTML = kinds.map(k => {
     const n = k === 'all' ? T.stories.length : T.stories.filter(s => s.kind === k).length;
-    return `<button type="button" class="${k === 'all' ? '' : 'k-' + k}" data-mf="${k}" aria-pressed="${k === filter}">${k === 'all' ? ic('pin') : ic(KIND_ICON[k])}${esc(k === 'all' ? L.s.all : L.s.kinds[k])}<span>${n}</span></button>`;
+    return `<button type="button" class="${k === 'all' ? '' : 'k-' + k}" data-mf="${k}" aria-pressed="${k === filter}" aria-label="${esc((k === 'all' ? L.s.all : L.s.kinds[k]) + ' ' + n)}" title="${esc(k === 'all' ? L.s.all : L.s.kinds[k])}">${k === 'all' ? ic('pin') : ic(KIND_ICON[k])}<em>${esc(k === 'all' ? L.s.all : L.s.kinds[k])}</em><span>${n}</span></button>`;
   }).join('');
 }
 $('#mfilter').addEventListener('click', e => {
@@ -1820,7 +1830,7 @@ async function togglePlay() {
   while (playing && run === playRun && n <= 9) {
     await goDay(n);
     if (!playing || run !== playRun) return;
-    await wait(n === 9 ? 800 : 3200);
+    await wait(1500);
     n++;
   }
   if (run === playRun && playing) setPlaying(false);
