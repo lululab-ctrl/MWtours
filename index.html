@@ -105,7 +105,10 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .chip{display:inline-flex;align-items:center;gap:6px;height:32px;background:none;cursor:pointer;font-family:inherit;padding-inline:10px;border-radius:var(--pill);border:1px solid rgba(232,162,62,.45);color:var(--paper);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .chip .ic{width:14px;height:14px;color:var(--amber)}
 .backbtn{position:fixed;z-index:26;top:calc(var(--top) + env(safe-area-inset-top) + 20px);inset-inline-start:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:inline-flex;align-items:center;gap:4px;height:36px;padding-inline:8px 14px;border-radius:var(--pill);border:1px solid rgba(244,175,86,.55);background:rgba(10,9,8,.72);color:var(--paper);font:700 14px/1 var(--sans);cursor:pointer;white-space:nowrap;height:40px;transition:background-color .3s,transform .3s var(--ease)}
-.back-on-map .mfilter{inset-inline-start:112px}
+.backbtn{width:44px;height:44px!important;padding:0!important;justify-content:center;border-radius:50%}
+.backbtn span{display:none}
+.backbtn .ic{width:22px!important;height:22px!important}
+.back-on-map .mfilter{inset-inline-start:66px}
 .backbtn:hover{background:rgba(30,24,18,.86)}
 .backbtn:active{transform:scale(.96)}
 .backbtn .ic{width:18px;height:18px;color:var(--gold)}
@@ -2177,7 +2180,7 @@ let backDay = -1, backRoom = null;   // backRoom: the page you left for the map,
 function renderBack() {
   const b = $('#back'), off = tab === 'route' && !backRoom;
   b.hidden = off; document.body.classList.toggle('back-on-map', tab === 'route' && !off);
-  b.lastElementChild.textContent = L.back;
+  b.lastElementChild.textContent = L.back; b.setAttribute('aria-label', L.back); b.title = L.back;
 }
 $('#back').addEventListener('click', () => {
   if (tab === 'route' && backRoom) {
