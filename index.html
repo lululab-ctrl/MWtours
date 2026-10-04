@@ -675,7 +675,6 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
         </div>
         <div class="mfilter" id="mfilter" role="group"></div>
         <div class="mapctl">
-          <button class="icbtn" type="button" id="ctl-opening"><svg class="ic"><use href="#i-film"/></svg></button>
           <button class="icbtn" type="button" id="ctl-all"><svg class="ic"><use href="#i-globe"/></svg></button>
           <button class="icbtn" type="button" id="ctl-assam"><svg class="ic"><use href="#i-target"/></svg></button>
         </div>
@@ -1659,8 +1658,7 @@ function renderAll() {
   const title = T.title[lang];
   $('#top-name').textContent = `${title.a} ${title.b}`;
   $$('#tabs button').forEach(b => { b.lastElementChild.textContent = L.tabs[b.dataset.tab]; });
-  [['#ctl-opening', L.opening], ['#ctl-all', L.all], ['#ctl-assam', L.assam]].forEach(([s, t]) => { $(s).setAttribute('aria-label', t); $(s).title = t; });
-  $('#ctl-opening').hidden = reduce;
+  [['#ctl-all', L.all], ['#ctl-assam', L.assam]].forEach(([s, t]) => { $(s).setAttribute('aria-label', t); $(s).title = t; });
   $('#credit').textContent = [GEO.credit, 'Terrain Tiles (AWS)', 'Natural Earth'].filter(Boolean).join(' · ');
   closePop();
   renderChip(); renderTimeline(); renderCard(); renderStories(); renderField(); renderInfo(); renderLeader(); renderFilter(); buildOverlay(); markStops(); render();
@@ -1714,8 +1712,7 @@ function renderCard(anim) {
       <h1 class="tt"><span>${esc(title.a)}</span> <b>${esc(title.b)}</b></h1>
       <p class="dates">${esc(T.dates[lang])}</p>
       <p class="count">${ic('plane')}<span>${esc(countText(false))}</span></p>
-      <div class="acts"><button class="btn primary small" type="button" data-play>${ic(playing ? 'pause' : 'play')}<span>${playing ? L.pause : L.play}</span></button>
-        ${reduce ? '' : `<button class="btn small" type="button" data-journey>${ic('film')}<span>${L.opening}</span></button>`}</div>
+      <div class="acts"><button class="btn primary small" type="button" data-play>${ic(playing ? 'pause' : 'play')}<span>${playing ? L.pause : L.play}</span></button></div>
       <div class="xtra"><button class="pill" type="button" data-goto="stories">${ic('story')}<span>${esc(L.readOf(T.stories.filter(s => storyRead(s.id)).length, T.stories.length))}</span></button></div></div>`;
   } else {
     const d = T.days.find(x => x.n === current), c = d[lang];
@@ -1818,7 +1815,6 @@ async function togglePlay() {
   }
   if (run === playRun && playing) setPlaying(false);
 }
-$('#ctl-opening').addEventListener('click', journey);
 $('#ctl-all').addEventListener('click', () => { stopAuto(); settleLegs(-1); closePop(); fly(fit(T.views.all)); });
 $('#ctl-assam').addEventListener('click', () => { stopAuto(); settleLegs(-1); closePop(); fly(fit(T.views.assam)); });
 
