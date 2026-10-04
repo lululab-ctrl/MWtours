@@ -906,12 +906,35 @@ async function decrypt(code) {
   const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(VAULT.iv) }, key, b64(VAULT.data));
   return JSON.parse(new TextDecoder().decode(buf));
 }
+// stories and field cards that came without a photo get one by what they are about.
+// Most specific first; each photo is used at most once per list so nothing repeats side by side.
+const EXTRA_PHOTOS = [
+  { re: /fairy.?bluebird|bluebird|ציפור.?פיות|כחלית/i, img: 'fairy-bluebird' },
+  { re: /pug.?mark|paw.?print|foot.?print|tracks?\b|עקבות|טביע/i, img: 'pugmark' },
+  { re: /\btea\b|tea.?(garden|estate)|גן.?תה|מטעי?.?תה|\bתה\b/i, img: 'tea-garden' },
+  { re: /thali|cuisine|\bfood\b|\bdish|\bmeal|אוכל|מטבח|ארוחה|תאלי/i, img: 'assamese-thali', kind: 'food' },
+  { re: /swamp.?deer|barasingha|\bdeer\b|צבי.?ביצות|ברסינג|אייל/i, img: 'swamp-deer' },
+  { re: /rhino|קרנף/i, img: 'rhino-meadow' },
+];
+function fillPhotos(T) {
+  const words = o => [o.id, ...['en', 'he'].map(l => o[l] ? [o[l].title, o[l].name].filter(Boolean).join(' ') : '')].join(' ');   // titles only, so a passing mention doesn't pull in the wrong photo
+  const fill = list => {
+    const used = new Set(list.map(o => o.photo).filter(Boolean));
+    for (const o of list || []) {
+      if (o.photo) continue;
+      const w = words(o), hit = EXTRA_PHOTOS.find(p => !used.has(`photos/${p.img}.jpg`) && ((p.kind && o.kind === p.kind) || p.re.test(w)));
+      if (!hit) continue;
+      o.photo = `photos/${hit.img}.jpg`; o.thumb = o.thumb || `photos/thumb/${hit.img}.jpg`; used.add(o.photo);
+    }
+  };
+  try { fill(T.stories); if (T.field) { fill(T.field.animals); fill(T.field.exercises); } } catch (e) {}
+}
 async function tryCode(code, quiet) {
   const err = $('#gate-err'), btn = $('#gate-btn'), form = $('#gate-form');
   if (!norm(code)) { if (!quiet) err.textContent = L.gateEmpty; return false; }
   btn.disabled = true; btn.firstElementChild.textContent = L.gateBusy; err.textContent = '';
   try {
-    T = await decrypt(code);
+    T = await decrypt(code); fillPhotos(T);
   } catch (e) {
     if (!quiet) { err.textContent = L.gateErr; form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); $('#code').select(); }
     btn.disabled = false; btn.firstElementChild.textContent = L.gateBtn;
