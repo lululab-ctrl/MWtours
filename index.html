@@ -104,6 +104,12 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .top .name{min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip{display:inline-flex;align-items:center;gap:6px;height:32px;background:none;cursor:pointer;font-family:inherit;padding-inline:10px;border-radius:var(--pill);border:1px solid rgba(232,162,62,.45);color:var(--paper);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .chip .ic{width:14px;height:14px;color:var(--amber)}
+.backbtn{flex:none;display:inline-flex;align-items:center;gap:4px;height:36px;padding-inline:8px 14px;border-radius:var(--pill);border:1px solid rgba(244,175,86,.55);background:rgba(244,175,86,.1);color:var(--paper);font:700 13px/1 var(--sans);cursor:pointer;white-space:nowrap;transition:background-color .3s,transform .3s var(--ease)}
+.backbtn:hover{background:rgba(244,175,86,.2)}
+.backbtn:active{transform:scale(.96)}
+.backbtn .ic{width:18px;height:18px;color:var(--gold)}
+[dir=rtl] .backbtn .ic{transform:scaleX(-1)}
+.top.has-back .mark{display:none}
 .top .end{margin-inline-start:auto;display:flex;align-items:center;gap:8px}
 .tabs{position:fixed;inset-inline:0;bottom:0;z-index:30;height:calc(var(--bar) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(5,1fr);
   background:rgba(10,9,8,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--rule);transition:transform .8s var(--ease)}
@@ -654,6 +660,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 
   <div id="shell" hidden>
     <header class="top">
+      <button class="backbtn" id="back" type="button" hidden><svg class="ic"><use href="#i-prev"/></svg><span></span></button>
       <span class="mark" role="img" aria-label="MW Photo Tours"></span>
       <span class="name" id="top-name"></span>
       <div class="end">
@@ -765,6 +772,7 @@ const UI = {
     play: 'הפעלת המסלול', pause: 'עצירה', all: 'כל הדרך', assam: 'מבט על אסאם', opening: 'צפייה בפתיחה', skip: 'דלגו',
     toGo: n => n === 1 ? 'מחר ממריאים' : `עוד ${n} ימים להמראה`, hoursToGo: n => `עוד ${n} שעות להמראה`,
     chip: n => n === 1 ? 'מחר' : `עוד ${n} ימים`, chipHours: n => `עוד ${n} שעות`,
+    back: n => n >= 0 ? `חזרה ליום ${pad2(n)}` : 'חזרה למפה',
     during: n => n === 0 ? 'היום יוצאים לדרך' : `היום: יום ${pad2(n)} מתוך 09`, chipDuring: n => n === 0 ? 'יוצאים' : `יום ${pad2(n)}`,
     after: 'המסע הסתיים. תודה שהייתם איתנו.',
     weekday: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
@@ -796,6 +804,7 @@ const UI = {
     play: 'Play the route', pause: 'Pause', all: 'The whole way', assam: 'Assam overview', opening: 'Watch the opening', skip: 'Skip',
     toGo: n => n === 1 ? 'We fly tomorrow' : `${n} days to take-off`, hoursToGo: n => `${n} hours to take-off`,
     chip: n => n === 1 ? 'Tomorrow' : `${n} days`, chipHours: n => `${n} hours`,
+    back: n => n >= 0 ? `Back to day ${pad2(n)}` : 'Back to map',
     during: n => n === 0 ? 'Today we set off' : `Today: day ${pad2(n)} of 09`, chipDuring: n => n === 0 ? 'Departing' : `Day ${pad2(n)}`,
     after: 'The expedition is over. Thank you for coming with us.',
     weekday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -840,7 +849,7 @@ function applyLang() {
   $$('[data-pub="kicker"]').forEach(el => { el.textContent = VAULT.pub.kicker[lang]; });
   $$('[data-pub="dates"]').forEach(el => { el.textContent = VAULT.pub.dates[lang]; });
   document.title = `${title.a} ${title.b}`;
-  if (T) renderAll();
+  if (T) { renderAll(); renderBack(); }
 }
 $$('[data-lang-toggle]').forEach(b => b.addEventListener('click', () => {
   lang = lang === 'he' ? 'en' : 'he'; store.set('mw-tour-lang', lang); applyLang();
@@ -1755,6 +1764,7 @@ function dayExtras(d) {
 // jump into a room and bring one part of it into view: 'stories', 'info:blk-flights', 'field:fa-rhino,fa-tiger'
 function goto(where) {
   const [room, ids] = where.split(':');
+  if (tab === 'route') backDay = cardOpen && current >= 0 ? current : -1;
   setTab(room);
   if (!ids) return;
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -2082,9 +2092,23 @@ function setTab(name, opts = {}) {
   ROOMS.forEach(r => { $('#' + r).hidden = r !== name; });
   if (name !== 'route') { setPlaying(false); closePop(); if (journeyOn) { seq++; endJourney(false); } }
   if (changed && name !== 'route' && !reduce) { const el = $('#' + name); el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); el.scrollTop = 0; }
+  if (name === 'route') backDay = -1;
+  renderBack();
   if (opts.hist !== false && (changed || !fromPop)) hist(changed && !fromPop && opts.push !== false, { tab: name });
 }
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { if (b.dataset.tab !== tab) backDay = -1; setTab(b.dataset.tab); } });
+// a way home from every room: back to the map, and to the day you came from
+let backDay = -1;
+function renderBack() {
+  const b = $('#back'), off = tab === 'route';
+  b.hidden = off; b.closest('.top').classList.toggle('has-back', !off);
+  b.lastElementChild.textContent = L.back(backDay); b.setAttribute('aria-label', L.back(backDay));
+}
+$('#back').addEventListener('click', () => {
+  const n = backDay;
+  setTab('route');
+  if (n >= 0 && T.days.some(d => d.n === n)) { if (n !== current) goDay(n, false); else { cardOpen = true; renderCard('in'); } }
+});
 $('#tabs').addEventListener('keydown', e => {
   const d = { ArrowRight: lang === 'he' ? -1 : 1, ArrowLeft: lang === 'he' ? 1 : -1 }[e.key];
   if (!d) return;
