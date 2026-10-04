@@ -184,7 +184,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 [dir=rtl] .lab.city>span,[dir=rtl] .lab.river>span,[dir=rtl] .lab.region>span,[dir=rtl] .lab.sea>span{font-size:12px;letter-spacing:.03em}
 .dot{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--paper);box-shadow:0 0 0 3px rgba(10,9,8,.65)}
 .dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px solid var(--paper);opacity:0}
-.ping .dot::after{animation:ripple 1.6s var(--ease) 2}
+.ping .dot::after{animation:ripple 2.2s var(--ease) 1}
 @keyframes ripple{0%{transform:scale(1);opacity:.9}100%{transform:scale(4.2);opacity:0}}
 .mk .tag{position:absolute;left:0;top:0;transform:translate(12px,-50%);display:inline-flex;align-items:center;gap:7px;height:28px;padding-inline:10px;border-radius:var(--pill);background:rgba(10,9,8,.82);border:1px solid var(--rule);white-space:nowrap;font-size:12.5px;font-weight:700;color:var(--paper);cursor:pointer;transition:border-color .3s,background-color .3s}
 .mk .tag:hover,.mk.sel .tag{border-color:rgba(232,162,62,.8);background:rgba(10,9,8,.94)}
@@ -1071,7 +1071,7 @@ function setView(v) {
 
 // smooth zoom-and-pan (van Wijk and Nuij, as in d3.interpolateZoom)
 function zoomPath(p0, p1) {
-  const rho = Math.SQRT2, r2 = 2, r4 = 4;
+  const rho = 1, r2 = 1, r4 = 1;   // calmer than d3's √2: the camera glides rather than leaping out and back in
   const [ux0, uy0, w0] = p0, [ux1, uy1, w1] = p1, dx = ux1 - ux0, dy = uy1 - uy0, d2 = dx * dx + dy * dy;
   let f, S;
   if (d2 < 1e-9) { S = Math.log(w1 / w0) / rho; f = t => [ux0 + t * dx, uy0 + t * dy, w0 * Math.exp(rho * t * S)]; }
@@ -1090,7 +1090,7 @@ function fly(target, opts = {}) {
   const id = ++anim;
   if (reduce) { setView(target); return { dur: 0, done: Promise.resolve(true) }; }
   const f = zoomPath([view.x, view.y, W / view.s], [target.x, target.y, W / target.s]);
-  const D = opts.dur || clamp(f.duration * (opts.slow || 0.9), 650, opts.max || 3400);
+  const D = opts.dur || clamp(f.duration * (opts.slow || 1.5), 1100, opts.max || 3800);
   const t0 = performance.now();
   const done = new Promise(res => {
     const step = now => {
@@ -1107,7 +1107,7 @@ function drawLegs(ids, tok, dur) {
   return new Promise(res => {
     if (!ids.length) return res();
     const lens = ids.map(id => legs[id].cum.at(-1)), total = lens.reduce((a, b) => a + b, 0);
-    const D = dur || clamp(900 + ids.length * 700, 1200, 2600), t0 = performance.now();
+    const D = dur || clamp(1400 + ids.length * 1000, 2000, 4000), t0 = performance.now();
     const arrived = new Set();
     const step = now => {
       if (tok !== seq) { veh.x = NaN; placeOverlay(); return res(); }
@@ -1157,16 +1157,16 @@ async function goDay(n, animate = true) {
   else if (n === 1) { atmos({ night: 0, dawn: 0.38, stars: 0 }, 1400); setTimeout(() => tok === seq && atmos({ dawn: 0 }, 2600), 2600); }
   else atmos({ night: 0, dawn: 0, stars: 0 }, 1000);
   await wait(30);   // let the card settle before measuring the clear area
-  if (animate && !reduce && legsOf(day).length) tiltTo(26, 1200);
+  if (tilt) tiltTo(0, 800);   // day changes stay flat: no camera lean
   for (const st of day.steps) {
     const target = fit(st.bbox), ids = st.legs || [];
     if (!animate || reduce) { anim++; setView(target); ids.forEach(id => setLeg(id, 1)); continue; }
     const f = fly(target);
-    await Promise.all([f.done, ids.length ? wait(f.dur * 0.45).then(() => tok === seq && drawLegs(ids, tok)) : null]);
+    if (!await f.done || tok !== seq) return;
+    if (ids.length) { await wait(250); if (tok !== seq) return; await drawLegs(ids, tok); }
     if (tok !== seq) return;
   }
   settleLegs(n, true);
-  tiltTo(0, 1400);
 }
 function markStops() {
   const day = T.days.find(d => d.n === current);
@@ -1534,7 +1534,7 @@ $('#mfilter').addEventListener('click', e => {
 });
 
 // ---------- the opening: a journey into the wild, from night to dawn (about 18 seconds) ----------
-const J_MS = 18500;
+const J_MS = 27000;
 async function journey() {
   if (reduce || !T.journey) return;
   stopAuto();
@@ -1548,43 +1548,41 @@ async function journey() {
   bar.classList.remove('go'); bar.style.setProperty('--jd', J_MS + 'ms'); void bar.offsetWidth; bar.classList.add('go');
   for (const id in legs) setLeg(id, 0);
   atmos({ night: 0.86, dawn: 0, stars: 1 }, 0);
-  tiltTo(44, 0);
+  tiltTo(18, 0);
   mapEl.classList.add('titling');
   setView(fit([24, 20, 47, 41]));
   fly(fit([30, 26.5, 41, 35.5]), { dur: 2600, ease: easeSine });
   const alive = () => tok === seq;
   const hold = async ms => { await wait(ms); return alive(); };
   const step = async (bbox, ids, drawMs, flyOpts = {}) => {
-    const f = fly(fit(bbox), { slow: 1, max: 1900, ...flyOpts });
-    await Promise.all([f.done, ids.length ? wait(f.dur * 0.4).then(() => alive() && drawLegs(ids, tok, drawMs)) : null]);
+    const f = fly(fit(bbox), { slow: 1.4, max: 2800, ...flyOpts });
+    await Promise.all([f.done, ids.length ? wait(f.dur * 0.6).then(() => alive() && drawLegs(ids, tok, drawMs * 1.4)) : null]);
     return alive();
   };
   if (!await hold(1900)) return;
   jt.classList.add('out'); mapEl.classList.remove('titling');
-  cap(J[0]); tiltTo(32, 1600);
+  cap(J[0]); tiltTo(14, 2000);
   if (!await step([33, 22.5, 79.5, 33.5], ['f-tlv-auh'], 1500)) return;
   atmos({ night: 0.7, stars: 0.8 }, 1400);
   cap(J[1]);
-  await drawLegs(['f-auh-del'], tok, 1500); if (!alive()) return;
+  await drawLegs(['f-auh-del'], tok, 2100); if (!alive()) return;
   cap(J[2]);
   atmos({ night: 0.12, dawn: 0.46, stars: 0 }, 2400);
   if (!await step([76, 24.6, 93.6, 29.4], ['f-del-gau'], 1600)) return;
   atmos({ night: 0, dawn: 0 }, 2200);
-  cap(J[3]); tiltTo(36, 1600);
+  cap(J[3]); tiltTo(14, 2000);
   if (!await step([91.45, 25.98, 93.6, 26.82], ['r-gau-kaz'], 1400)) return;
-  tiltTo(48, 1600);
   if (!await step([93.0, 26.48, 93.7, 26.86], [], 0, { dur: 1500 })) return;
-  if (!await hold(700)) return;
-  cap(J[4]); tiltTo(34, 1500);
+  if (!await hold(1400)) return;
+  cap(J[4]); tiltTo(14, 2000);
   if (!await step([90.9, 26.0, 93.6, 26.85], ['r-kaz-ghy', 'r-ghy-man'], 1800)) return;
-  tiltTo(48, 1600);
   if (!await step([90.66, 26.55, 91.3, 26.92], [], 0, { dur: 1500 })) return;
-  if (!await hold(700)) return;
+  if (!await hold(1400)) return;
   cap(J[5]); tiltTo(0, 1800);
   ['r-man-gau', 'f-gau-del'].forEach(id => setLeg(id, 1));
   journeyOn = false; const t = fit(T.views.assam); journeyOn = true;
-  fly(t, { dur: 1700 });
-  if (!await hold(1900)) return;
+  fly(t, { dur: 2400 });
+  if (!await hold(2600)) return;
   endJourney(false);
 }
 function cap(c) {
@@ -1815,7 +1813,7 @@ async function togglePlay() {
   while (playing && run === playRun && n <= 9) {
     await goDay(n);
     if (!playing || run !== playRun) return;
-    await wait(n === 9 ? 600 : 1900);
+    await wait(n === 9 ? 800 : 3200);
     n++;
   }
   if (run === playRun && playing) setPlaying(false);
