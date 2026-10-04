@@ -104,7 +104,8 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .top .name{min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip{display:inline-flex;align-items:center;gap:6px;height:32px;background:none;cursor:pointer;font-family:inherit;padding-inline:10px;border-radius:var(--pill);border:1px solid rgba(232,162,62,.45);color:var(--paper);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .chip .ic{width:14px;height:14px;color:var(--amber)}
-.backbtn{position:fixed;z-index:26;top:calc(var(--top) + env(safe-area-inset-top) + 12px);inset-inline-start:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:inline-flex;align-items:center;gap:4px;height:36px;padding-inline:8px 14px;border-radius:var(--pill);border:1px solid rgba(244,175,86,.55);background:rgba(10,9,8,.72);color:var(--paper);font:700 14px/1 var(--sans);cursor:pointer;white-space:nowrap;height:40px;transition:background-color .3s,transform .3s var(--ease)}
+.backbtn{position:fixed;z-index:26;top:calc(var(--top) + env(safe-area-inset-top) + 20px);inset-inline-start:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:inline-flex;align-items:center;gap:4px;height:36px;padding-inline:8px 14px;border-radius:var(--pill);border:1px solid rgba(244,175,86,.55);background:rgba(10,9,8,.72);color:var(--paper);font:700 14px/1 var(--sans);cursor:pointer;white-space:nowrap;height:40px;transition:background-color .3s,transform .3s var(--ease)}
+.back-on-map .mfilter{inset-inline-start:112px}
 .backbtn:hover{background:rgba(30,24,18,.86)}
 .backbtn:active{transform:scale(.96)}
 .backbtn .ic{width:18px;height:18px;color:var(--gold)}
@@ -564,7 +565,13 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .dpin{display:grid;gap:12px}
 .dpin .full{margin:8px 0 0;font-size:15px;line-height:1.6;color:var(--muted)}
 .dpin .rows{display:grid}
-.dpin .row{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;padding-block:9px;border-bottom:1px solid var(--rule);font-size:14.5px}
+.sched{list-style:none;margin:10px 0 2px;padding:0;display:grid;position:relative}
+.sched::before{content:"";position:absolute;inset-block:18px 30px;inset-inline-start:27px;width:1px;background:rgba(232,162,62,.35)}
+.sched li{position:relative;display:grid;grid-template-columns:56px minmax(0,1fr);gap:14px;align-items:baseline;padding-block:8px;font-size:15px;line-height:1.5;color:var(--paper)}
+.sched .tm{position:relative;z-index:1;justify-self:center;padding:3px 7px;border-radius:8px;background:#13241f;border:1px solid rgba(232,162,62,.55);font:700 13px/1 var(--label);color:var(--amber);font-variant-numeric:tabular-nums;direction:ltr}
+.sched .tm i{display:block;width:6px;height:6px;border-radius:50%;background:var(--gold-soft)}
+.sched .tm:has(i){width:14px;height:14px;padding:0;display:grid;place-items:center;border-radius:50%;align-self:start;margin-top:5px}
+.dpin .row{display:grid;grid-template-columns:118px minmax(0,1fr);gap:14px;padding-block:9px;border-bottom:1px solid var(--rule);font-size:14.5px}
 .dpin .row:last-child{border-bottom:0}
 .dpin .row b{color:var(--gold-soft);font-weight:600}
 .dpin .row span{color:var(--paper)}
@@ -1792,7 +1799,7 @@ function dayExtras(d) {
 // jump into a room and bring one part of it into view: 'stories', 'info:blk-flights', 'field:fa-rhino,fa-tiger'
 function goto(where) {
   const [room, ids] = where.split(':');
-  if (tab === 'route') backDay = cardOpen && current >= 0 ? current : -1;
+  if (tab === 'route') { backDay = cardOpen && current >= 0 ? current : -1; backRoom = null; }
   setTab(room);
   if (!ids) return;
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -1961,6 +1968,27 @@ function celebrate(sel, color, icon, done) {
 // ---------- essentials ----------
 let checks = {};
 try { checks = JSON.parse(store.get(KEY + '-check') || '{}') || {}; } catch (e) { checks = {}; }
+// "07:00 take-off to Abu Dhabi (EY 596). At 14:30 we continue to Delhi (EY 216), landing at 19:20. Pick-up to the hotel."
+// becomes a little timetable: 07:00 Take-off… / 14:30 We continue… / 19:20 Landing / · Pick-up…
+const TIME = /\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/;
+function schedSteps(text) {
+  const out = [], cap1 = t => t.charAt(0).toLocaleUpperCase() + t.slice(1);
+  const clean = (t, tm) => cap1(t.replace(new RegExp(`^(?:and\\s+|ו)?(?:at|from|around|by|ב[-־]?|בשעה|סביב|עד)?\\s*${tm.replace('.', '[:.]')}\\s*[,:–-]?\\s*`, 'i'), '')
+    .replace(new RegExp(`\\s*,?\\s*(?:at|around|ב[-־]?|בשעה)\\s*${tm.replace('.', '[:.]')}`, 'i'), '').replace(/\s+([,.])/g, '$1').trim());
+  for (const sen of String(text || '').split(/(?<=[.!?])\s+/).filter(Boolean)) {
+    const parts = sen.split(/,\s+/), clauses = parts.length > 1 && parts.slice(1).some(p => TIME.test(p)) ? parts : [sen];
+    for (const cl of clauses) {
+      const m = cl.match(TIME), tm = m ? `${m[1].padStart(2, '0')}:${m[2]}` : '';
+      out.push({ t: tm, x: m ? clean(cl, m[0]) : cap1(cl.trim()) });
+    }
+  }
+  return out.filter(s => s.x);
+}
+function schedHTML(text) {
+  const st = schedSteps(text);
+  if (!st.some(s => s.t)) return `<p class="full">${esc(text)}</p>`;
+  return `<ol class="sched">${st.map(s => `<li><span class="tm">${s.t ? esc(s.t) : '<i></i>'}</span><span>${esc(s.x.replace(/[.]$/, ''))}</span></li>`).join('')}</ol>`;
+}
 function renderInfo() {
   const I = L.i, fl = T.flights;
   const val = v => esc(tx(v));
@@ -1983,7 +2011,7 @@ function renderInfo() {
       <button class="drow" type="button" data-dayrow="${d.n}" aria-expanded="${open}">
       <span class="n"><b>${pad2(d.n)}</b><small>${dd}.${m}</small></span><span><span class="h">${esc(c.title)}</span><span class="p">${esc(c.text)}</span></span>${ic('next')}</button>
       <div class="dpanel"><div class="dpin">
-        <p class="full">${esc(c.text)}</p>
+        ${schedHTML(c.text)}
         <div class="rows">
           ${row(S.date, esc(dateLabel(d.date)))}
           ${row(S.stay, c.stay ? esc(c.stay) : '')}
@@ -2072,7 +2100,7 @@ $('#info').addEventListener('click', e => {
   if (e.target.closest('[data-ics]')) { downloadICS(); return; }
   const j = e.target.closest('[data-jump]'); if (j) { goto('info:' + j.dataset.jump); return; }
   const d = e.target.closest('[data-dayrow]'); if (d) { const w = d.closest('.dday'), on = !w.classList.contains('open'); w.classList.toggle('open', on); d.setAttribute('aria-expanded', on); return; }
-  const dm = e.target.closest('[data-daymap]'); if (dm) { backDay = -1; setTab('route'); setPlaying(false); goDay(+dm.dataset.daymap); return; }
+  const dm = e.target.closest('[data-daymap]'); if (dm) { backDay = -1; backRoom = { tab: 'info', day: +dm.dataset.daymap }; setTab('route'); setPlaying(false); goDay(+dm.dataset.daymap); return; }
 });
 function weatherSVG(wx) {
   const I = L.i, rtl = lang === 'he';
@@ -2143,15 +2171,22 @@ function setTab(name, opts = {}) {
   renderBack();
   if (opts.hist !== false && (changed || !fromPop)) hist(changed && !fromPop && opts.push !== false, { tab: name });
 }
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { if (b.dataset.tab !== tab) backDay = -1; setTab(b.dataset.tab); } });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { if (b.dataset.tab !== tab) { backDay = -1; backRoom = null; } setTab(b.dataset.tab); } });
 // a way home from every room: back to the map, and to the day you came from
-let backDay = -1;
+let backDay = -1, backRoom = null;   // backRoom: the page you left for the map, e.g. the day-by-day schedule
 function renderBack() {
-  const b = $('#back'), off = tab === 'route';
-  b.hidden = off;
+  const b = $('#back'), off = tab === 'route' && !backRoom;
+  b.hidden = off; document.body.classList.toggle('back-on-map', tab === 'route' && !off);
   b.lastElementChild.textContent = L.back;
 }
 $('#back').addEventListener('click', () => {
+  if (tab === 'route' && backRoom) {
+    const r = backRoom; backRoom = null; setTab(r.tab);
+    const row = r.day != null && $(`[data-dayrow="${r.day}"]`);
+    if (row) { const w = row.closest('.dday'); w.classList.add('open'); row.setAttribute('aria-expanded', 'true');
+      requestAnimationFrame(() => requestAnimationFrame(() => w.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' }))); }
+    return;
+  }
   const n = backDay;
   setTab('route');
   if (n >= 0 && T.days.some(d => d.n === n)) { if (n !== current) goDay(n, false); else { cardOpen = true; renderCard('in'); } }
