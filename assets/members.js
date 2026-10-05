@@ -42,12 +42,12 @@ const T = {
         many: 'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.', nameHint: 'באותו קוד ושם תוכלו להיכנס מכל טלפון או מחשב.',
         photos: 'תמונות הקבוצה', add: 'הוספת תמונה', adding: 'מעלים…', none: 'עדיין אין תמונות. אולי שלכם תהיה הראשונה?', you: 'אתם',
         del: 'מחיקה', delQ: 'למחוק את התמונה?', close: 'סגירה', prev: 'הקודמת', next: 'הבאה', failed: 'ההעלאה לא הצליחה. נסו שוב כשיש קליטה.',
-        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', of: (a, b) => `${a} מתוך ${b}` },
+        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו אפשר להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
   en: { name: 'Your name', namePh: 'First and last name', needName: 'Type your name.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
         many: 'Too many tries. Please wait a few minutes.', nameHint: 'With the same code and name you can open it on any phone or computer.',
         photos: 'Group photos', add: 'Add photo', adding: 'Uploading…', none: 'No photos yet. Yours could be the first.', you: 'You',
         del: 'Delete', delQ: 'Delete this photo?', close: 'Close', prev: 'Previous', next: 'Next', failed: "The upload didn't work. Try again when you have signal.",
-        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', of: (a, b) => `${a} of ${b}` },
+        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap Add photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
 };
 const W = () => T[(document.documentElement.lang || 'he').startsWith('en') ? 'en' : 'he'];
 
@@ -211,16 +211,17 @@ async function loadPhotos(force) {
   } catch (e) { loadedAt = 0; }
 }
 
+const ADD_BTN = w => `<button type="button" class="mwp-add" data-mwp-add><svg viewBox="0 0 24 24"><path d="M3.5 8.5a2 2 0 0 1 2-2h2.2L9.5 4h5l1.8 2.5h2.2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg><span>${esc(w.add)}</span></button>`;
 function tileBlock(tile) {
   const it = itemOf(tile), list = forItem(it), w = W(), max = 5;
+  if (!member) return `<div class="mwp-h"><span>${esc(w.photos)}</span></div><p class="mwp-none">${esc(w.joinFirst)}</p>${ADD_BTN(w)}`;
   const th = list.slice(0, max).map((p, i) => `<button type="button" class="mwp-t" data-mwp-open="${i}" style="background-image:url('${esc(urls[thumbOf(p.path)] || urls[p.path] || '')}')" aria-label="${esc((p.member_id === member.id ? w.you : p.members?.name || '') + ' · ' + w.photos)}"></button>`).join('')
     + (list.length > max ? `<button type="button" class="mwp-t more" data-mwp-open="${max}">+${list.length - max}</button>` : '');
   return `<div class="mwp-h"><span>${esc(w.photos)}</span>${list.length ? `<small>${list.length}</small>` : ''}</div>
     ${list.length ? `<div class="mwp-row">${th}</div>` : `<p class="mwp-none">${esc(w.none)}</p>`}
-    <button type="button" class="mwp-add" data-mwp-add><svg viewBox="0 0 24 24"><path d="M3.5 8.5a2 2 0 0 1 2-2h2.2L9.5 4h5l1.8 2.5h2.2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg><span>${esc(w.add)}</span></button>`;
+    ${ADD_BTN(w)}`;
 }
 function decorate(refresh) {
-  if (!member) return;
   document.querySelectorAll('#field .ftile[id^="fa-"], #field .ftile[id^="fx-"]').forEach(tile => {
     let b = tile.querySelector(':scope > .mwp');
     if (b && !refresh) return;
@@ -296,6 +297,35 @@ function viewer(tile, start) {
   draw(); document.body.appendChild(v);
 }
 
+function askName() {
+  const w = W(), v = document.createElement('div');
+  v.className = 'mwp-ask'; v.dir = document.documentElement.dir || 'rtl';
+  v.innerHTML = `<form class="mwp-card" role="dialog" aria-modal="true" novalidate><button type="button" class="mwp-x" aria-label="${esc(w.close)}">×</button>
+    <h2>${esc(w.whoTitle)}</h2><p>${esc(w.whoText)}</p>
+    <input type="text" autocomplete="name" autocapitalize="words" spellcheck="false" placeholder="${esc(w.namePh)}" value="${esc(ls.get(NAME) || '')}">
+    <button type="submit" class="mwp-go">${esc(w.go)}</button><p class="mwp-msg" role="status"></p></form>`;
+  const f = v.querySelector('form'), inp = f.querySelector('input'), go = f.querySelector('.mwp-go'), msg = f.querySelector('.mwp-msg');
+  const close = () => v.remove();
+  v.querySelector('.mwp-x').onclick = close;
+  v.addEventListener('pointerdown', e => { if (e.target === v) close(); });
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const name = inp.value.trim().replace(/\s+/g, ' ');
+    if (!name) { msg.textContent = w.needName; inp.focus(); return; }
+    go.disabled = true; go.textContent = w.busy;
+    try {
+      await timeout(session(), 9000);
+      const r = await timeout(rpc('join_tour', { p_slug: SLUG, p_code: ls.get(KEY + '-code') || '', p_name: name }), 9000);
+      if (r && r.error) { go.disabled = false; go.textContent = w.go; msg.textContent = r.error === 'tour_not_ready' ? w.notReady : r.error === 'too_many_attempts' ? w.many : w.tryLater; return; }
+      ls.set(NAME, name); member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member));
+      close();
+      if (applyState(r.state)) { await save(); return reopen(); }   // their lists from another device: reload to show them
+      save(); decorate(true); await loadPhotos(true); toast(w.joined);
+    } catch (err) { go.disabled = false; go.textContent = w.go; msg.textContent = w.tryLater; }
+  };
+  document.body.appendChild(v); setTimeout(() => inp.focus(), 60);
+}
+
 const picker = document.createElement('input');
 picker.type = 'file'; picker.accept = 'image/*'; picker.hidden = true;
 let pickFor = null;
@@ -306,7 +336,7 @@ document.addEventListener('click', e => {
   if (!add && !open) return;
   const tile = e.target.closest('.ftile'); if (!tile) return;
   e.preventDefault(); e.stopPropagation();
-  if (add) { if (tile.querySelector('.mwp').dataset.busy) return; pickFor = tile; picker.click(); }
+  if (add) { if (tile.querySelector('.mwp').dataset.busy) return; if (!member) return askName(); pickFor = tile; picker.click(); }
   else viewer(tile, +open.dataset.mwpOpen);
 }, true);
 
@@ -323,6 +353,17 @@ const css = `
 .gate-form .mw-name::placeholder{color:rgba(254,251,241,.3);font-weight:400;letter-spacing:0;text-transform:none}
 .gate-form .mw-name:focus{outline:none;border-color:#F4AF56}
 .mw-hint{margin:-4px 0 0;font-size:13px;color:rgba(244,244,244,.5)}
+#field .ftile .noph,#stories .ftile .noph{aspect-ratio:16/10}
+.mwp-ask{position:fixed;inset:0;z-index:125;display:grid;place-items:center;padding:16px;background:rgba(5,5,4,.66);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:mwpIn .25s ease}
+.mwp-card{position:relative;width:min(400px,100%);display:grid;gap:12px;padding:24px 20px 20px;border-radius:22px;background:linear-gradient(180deg,#123B35,#0C2925 45%,#0A0908);border:1px solid rgba(254,251,241,.16);box-shadow:0 30px 80px rgba(0,0,0,.6);color:#F4F4F4;font-family:"Google Sans",Arial,sans-serif;text-align:start}
+.mwp-card h2{margin:0;padding-inline-end:40px;font-size:21px;color:#FEFBF1}
+.mwp-card p{margin:0;font-size:14.5px;line-height:1.5;color:rgba(244,244,244,.75)}
+.mwp-card input{width:100%;height:50px;padding-inline:18px;border-radius:64px;border:1px solid rgba(254,251,241,.3);background:rgba(10,9,8,.45);color:#FEFBF1;font:600 16px "Google Sans",Arial,sans-serif}
+.mwp-card input:focus{outline:none;border-color:#F4AF56}
+.mwp-go{min-height:48px;border-radius:64px;border:1px solid #F4AF56;background:radial-gradient(130% 160% at 0 0,rgba(244,175,86,.24),transparent 46%);color:#F4F4F4;font:700 15px "Google Sans",Arial,sans-serif;cursor:pointer}
+.mwp-go:disabled{opacity:.55}
+.mwp-card .mwp-x{top:10px}
+.mwp-msg{min-height:1.3em;color:#F4AF56!important;font-size:14px!important}
 .mwp{display:grid;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid rgba(254,251,241,.12)}
 .mwp-h{display:flex;align-items:center;gap:8px;font:600 11px/1 Montserrat,"Google Sans",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#E4AA7C}
 [dir=rtl] .mwp-h{font:600 13px/1 "Google Sans",sans-serif;letter-spacing:0}
