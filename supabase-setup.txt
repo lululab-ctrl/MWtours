@@ -1,0 +1,299 @@
+-- =====================================================================
+-- MW Photo Tours · tours.mw.photography — Supabase setup
+-- Project: uiydebfzuxnxjqcnrylv
+--
+-- What this sets up
+--   • Expeditions and their codes, managed by Matan from tours.mw.photography/admin (no file uploads)
+--   • Travelers join with the expedition code + their name. On any other browser or phone, the same
+--     code + name brings back everything: the expedition opens, lists and field progress are restored.
+--   • Photo uploads for the "animals to look for" and "photo exercises", visible to everyone in the
+--     same expedition (and only to them). Each traveler can delete their own photos; Matan can delete any.
+--   • Activity for Matan: who joined which expedition, when, how often, how many photos.
+--
+-- HOW TO RUN
+--   1. Do the dashboard steps at the BOTTOM of this file first (anonymous sign-ins + Matan's admin login).
+--   2. Supabase → SQL Editor → New query → paste this whole file → Run. Safe to run more than once.
+--   3. Run the one-line "make Matan an admin" query (also at the bottom).
+-- =====================================================================
+
+create extension if not exists pgcrypto with schema extensions;
+
+-- ---------------------------------------------------------------------
+-- 1. TABLES
+-- ---------------------------------------------------------------------
+
+-- Who may manage expeditions (Matan). Filled by the query at the bottom.
+create table if not exists public.tour_admins (
+  user_id  uuid primary key references auth.users (id) on delete cascade,
+  email    text
+);
+
+-- One row per expedition. join_code_hash = the code travelers type (stored scrambled, never readable).
+-- content_secret = the key the expedition page is locked with; handed only to travelers who joined.
+create table if not exists public.tours (
+  slug            text primary key check (slug ~ '^[a-z0-9][a-z0-9-]{1,63}$'),
+  title           text,
+  join_code_hash  text,
+  content_secret  text,
+  updated_at      timestamptz not null default now()
+);
+
+-- A traveler in an expedition, known by their name (case and extra spaces ignored).
+create table if not exists public.members (
+  id          uuid primary key default gen_random_uuid(),
+  tour_slug   text not null references public.tours (slug) on delete cascade,
+  name        text not null check (char_length(btrim(name)) between 1 and 60),
+  name_key    text not null,
+  created_at  timestamptz not null default now(),
+  last_seen   timestamptz not null default now(),
+  visits      integer not null default 1,
+  unique (tour_slug, name_key)
+);
+
+-- Each browser/phone gets its own silent session (anonymous sign-in); joining links it to the member.
+create table if not exists public.member_devices (
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  member_id  uuid not null references public.members (id) on delete cascade,
+  linked_at  timestamptz not null default now(),
+  primary key (user_id, member_id)
+);
+
+-- A traveler's lists and field progress for that expedition.
+create table if not exists public.progress (
+  member_id   uuid primary key references public.members (id) on delete cascade,
+  state       jsonb not null default '{}'::jsonb check (pg_column_size(state) < 131072),
+  updated_at  timestamptz not null default now()
+);
+
+-- Photos travelers share for an animal or a photo exercise.
+create table if not exists public.photos (
+  id          bigint generated always as identity primary key,
+  tour_slug   text not null references public.tours (slug) on delete cascade,
+  member_id   uuid not null references public.members (id) on delete cascade,
+  item_kind   text not null check (item_kind in ('animal', 'exercise')),
+  item_id     text not null check (char_length(item_id) between 1 and 80),
+  path        text not null unique,
+  created_at  timestamptz not null default now()
+);
+create index if not exists photos_tour_idx on public.photos (tour_slug, created_at desc);
+
+-- Wrong-code attempts, to slow down guessing.
+create table if not exists public.join_attempts (
+  id       bigint generated always as identity primary key,
+  user_id  uuid,
+  at       timestamptz not null default now()
+);
+create index if not exists join_attempts_user_idx on public.join_attempts (user_id, at desc);
+
+-- ---------------------------------------------------------------------
+-- 2. HELPERS
+-- ---------------------------------------------------------------------
+
+create or replace function public.norm_code(c text) returns text
+language sql immutable as $$ select upper(regexp_replace(coalesce(c, ''), '[\s\-–_.]', '', 'g')) $$;
+
+create or replace function public.is_tour_admin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.tour_admins where user_id = auth.uid())
+$$;
+
+-- the member this browser is signed in as, in a given expedition
+create or replace function public.my_member(p_slug text) returns uuid
+language sql stable security definer set search_path = public as $$
+  select m.id from public.members m join public.member_devices d on d.member_id = m.id
+  where d.user_id = auth.uid() and m.tour_slug = p_slug limit 1
+$$;
+
+-- every expedition this browser has joined
+create or replace function public.my_tours() returns setof text
+language sql stable security definer set search_path = public as $$
+  select m.tour_slug from public.members m join public.member_devices d on d.member_id = m.id where d.user_id = auth.uid()
+$$;
+
+-- ---------------------------------------------------------------------
+-- 3. SECURITY (row level security): travelers only see their own expeditions
+-- ---------------------------------------------------------------------
+
+alter table public.tour_admins    enable row level security;
+alter table public.tours          enable row level security;
+alter table public.members        enable row level security;
+alter table public.member_devices enable row level security;
+alter table public.progress       enable row level security;
+alter table public.photos         enable row level security;
+alter table public.join_attempts  enable row level security;
+
+revoke all on public.tour_admins, public.tours, public.members, public.member_devices,
+              public.progress, public.photos, public.join_attempts from anon, authenticated;
+grant usage on schema public to anon, authenticated;
+grant select on public.members to authenticated;
+grant select, insert, delete on public.photos to authenticated;
+
+drop policy if exists "Members see fellow members"     on public.members;
+drop policy if exists "Members see the group's photos" on public.photos;
+drop policy if exists "Members add their own photos"   on public.photos;
+drop policy if exists "Delete own photos, admin any"   on public.photos;
+
+-- names of the people in your own expedition(s), for the photo credits; admins see all
+create policy "Members see fellow members" on public.members for select to authenticated
+  using (tour_slug in (select public.my_tours()) or public.is_tour_admin());
+
+create policy "Members see the group's photos" on public.photos for select to authenticated
+  using (tour_slug in (select public.my_tours()) or public.is_tour_admin());
+
+create policy "Members add their own photos" on public.photos for insert to authenticated
+  with check (member_id = public.my_member(tour_slug)
+              and path like tour_slug || '/' || member_id::text || '/%');
+
+create policy "Delete own photos, admin any" on public.photos for delete to authenticated
+  using (member_id in (select d.member_id from public.member_devices d where d.user_id = auth.uid())
+         or public.is_tour_admin());
+
+-- ---------------------------------------------------------------------
+-- 4. WHAT THE EXPEDITION PAGES CALL
+-- ---------------------------------------------------------------------
+
+-- join with code + name: returns the key that opens the page, plus saved progress
+create or replace function public.join_tour(p_slug text, p_code text, p_name text) returns json
+language plpgsql security definer set search_path = public, extensions as $$
+declare t public.tours; v_member uuid; v_name text; v_state jsonb;
+begin
+  if auth.uid() is null then raise exception 'no_session'; end if;
+  if (select count(*) from public.join_attempts where user_id = auth.uid() and at > now() - interval '15 minutes') >= 10 then
+    return json_build_object('error', 'too_many_attempts');
+  end if;
+  select * into t from public.tours where slug = p_slug;
+  if not found or t.join_code_hash is null then return json_build_object('error', 'tour_not_ready'); end if;
+  if extensions.crypt(public.norm_code(p_code), t.join_code_hash) <> t.join_code_hash then
+    insert into public.join_attempts (user_id) values (auth.uid());   -- kept: an error return does not undo it
+    return json_build_object('error', 'wrong_code');
+  end if;
+  v_name := regexp_replace(btrim(coalesce(p_name, '')), '\s+', ' ', 'g');
+  if char_length(v_name) < 1 or char_length(v_name) > 60 then return json_build_object('error', 'bad_name'); end if;
+
+  insert into public.members (tour_slug, name, name_key) values (p_slug, v_name, lower(v_name))
+  on conflict (tour_slug, name_key) do update set last_seen = now(), visits = public.members.visits + 1
+  returning id into v_member;
+  insert into public.member_devices (user_id, member_id) values (auth.uid(), v_member) on conflict do nothing;
+  insert into public.progress (member_id) values (v_member) on conflict do nothing;
+  select state into v_state from public.progress where member_id = v_member;
+  select name into v_name from public.members where id = v_member;
+  return json_build_object('member_id', v_member, 'name', v_name, 'secret', t.content_secret, 'state', v_state);
+end $$;
+
+-- already joined on this browser: open straight away, with the latest progress
+create or replace function public.resume_tour(p_slug text) returns json
+language plpgsql security definer set search_path = public as $$
+declare v_member uuid; t public.tours; v_name text; v_state jsonb;
+begin
+  v_member := public.my_member(p_slug);
+  if v_member is null then return null; end if;
+  select * into t from public.tours where slug = p_slug;
+  update public.members set last_seen = now(),
+         visits = visits + case when last_seen < now() - interval '30 minutes' then 1 else 0 end
+   where id = v_member returning name into v_name;
+  select state into v_state from public.progress where member_id = v_member;
+  return json_build_object('member_id', v_member, 'name', v_name, 'secret', t.content_secret, 'state', v_state);
+end $$;
+
+create or replace function public.save_progress(p_slug text, p_state jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare v_member uuid;
+begin
+  v_member := public.my_member(p_slug);
+  if v_member is null then raise exception 'not_member'; end if;
+  insert into public.progress (member_id, state, updated_at) values (v_member, coalesce(p_state, '{}'::jsonb), now())
+  on conflict (member_id) do update set state = excluded.state, updated_at = now();
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 5. WHAT MATAN'S ADMIN PAGE CALLS
+-- ---------------------------------------------------------------------
+
+-- connect an expedition / change its code. p_secret: the code the page is locked with (only needed the first time).
+create or replace function public.admin_set_tour(p_slug text, p_title text, p_secret text, p_code text) returns void
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if not public.is_tour_admin() then raise exception 'not_admin'; end if;
+  if p_code is not null and char_length(public.norm_code(p_code)) < 4 then raise exception 'code_too_short'; end if;
+  insert into public.tours (slug, title, content_secret, join_code_hash)
+  values (p_slug, p_title, nullif(public.norm_code(p_secret), ''),
+          case when p_code is null then null else extensions.crypt(public.norm_code(p_code), extensions.gen_salt('bf')) end)
+  on conflict (slug) do update set
+    title          = coalesce(excluded.title, public.tours.title),
+    content_secret = coalesce(excluded.content_secret, public.tours.content_secret),
+    join_code_hash = coalesce(excluded.join_code_hash, public.tours.join_code_hash),
+    updated_at     = now();
+end $$;
+
+-- everything for the admin page in one go
+create or replace function public.admin_overview() returns json
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.is_tour_admin() then raise exception 'not_admin'; end if;
+  return coalesce((
+    select json_agg(json_build_object(
+      'slug', t.slug, 'title', t.title, 'ready', t.join_code_hash is not null and t.content_secret is not null, 'updated_at', t.updated_at,
+      'members', coalesce((select json_agg(json_build_object(
+          'id', m.id, 'name', m.name, 'joined', m.created_at, 'last_seen', m.last_seen, 'visits', m.visits,
+          'photos', (select count(*) from public.photos p where p.member_id = m.id)) order by m.last_seen desc)
+        from public.members m where m.tour_slug = t.slug), '[]'::json)
+    ) order by t.slug) from public.tours t), '[]'::json);
+end $$;
+
+create or replace function public.admin_remove_member(p_member uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_tour_admin() then raise exception 'not_admin'; end if;
+  delete from public.members where id = p_member;   -- their devices, progress and photo records go with them
+end $$;
+
+-- who may call what
+revoke execute on all functions in schema public from public, anon;
+grant execute on function public.norm_code(text), public.is_tour_admin(), public.my_member(text), public.my_tours(),
+  public.join_tour(text, text, text), public.resume_tour(text), public.save_progress(text, jsonb),
+  public.admin_set_tour(text, text, text, text), public.admin_overview(), public.admin_remove_member(uuid)
+  to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 6. PHOTO STORAGE: a private bucket; files live at <expedition>/<member>/<file>
+-- ---------------------------------------------------------------------
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('tour-photos', 'tour-photos', false, 8388608, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 8388608, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
+
+drop policy if exists "Tour members view the group's photos" on storage.objects;
+drop policy if exists "Tour members upload their own photos" on storage.objects;
+drop policy if exists "Tour members delete their own photos, admin any" on storage.objects;
+
+create policy "Tour members view the group's photos" on storage.objects for select to authenticated
+  using (bucket_id = 'tour-photos' and ((storage.foldername(name))[1] in (select public.my_tours()) or public.is_tour_admin()));
+
+create policy "Tour members upload their own photos" on storage.objects for insert to authenticated
+  with check (bucket_id = 'tour-photos' and (storage.foldername(name))[2] = public.my_member((storage.foldername(name))[1])::text);
+
+create policy "Tour members delete their own photos, admin any" on storage.objects for delete to authenticated
+  using (bucket_id = 'tour-photos' and ((storage.foldername(name))[2] in (
+           select d.member_id::text from public.member_devices d where d.user_id = auth.uid())
+         or public.is_tour_admin()));
+
+-- =====================================================================
+-- DASHBOARD STEPS (do these first)
+-- =====================================================================
+--
+-- A. Let each browser get a silent session (no email, nothing for the traveler to do):
+--    Authentication → Sign In / Providers → turn ON "Allow anonymous sign-ins". Save.
+--    (Optional but recommended later: Authentication → Attack Protection → enable CAPTCHA.)
+--
+-- B. Create Matan's admin login (email + password, used only on tours.mw.photography/admin):
+--    Authentication → Users → Add user → Create new user → his email + a strong password → ✔ Auto Confirm User.
+--
+-- C. After running this file, make that login an admin. Replace the email and run:
+--
+--    insert into public.tour_admins (user_id, email)
+--    select id, email from auth.users where email = 'MATAN@EXAMPLE.COM'
+--    on conflict (user_id) do nothing;
+--
+-- D. Then open tours.mw.photography/admin, sign in, and for each expedition enter its current code
+--    once ("Connect"). From then on, changing an expedition's code is done right there.
+-- =====================================================================

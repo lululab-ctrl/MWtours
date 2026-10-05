@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" href="../assets/favicon.ico" sizes="32x32"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png">
-<title>Expedition codes · MW Photo Tours</title>
+<title>Expeditions admin · MW Photo Tours</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&family=Montserrat:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
@@ -15,127 +15,212 @@
   --sans:"Google Sans","Helvetica Neue",Arial,sans-serif;--label:"Montserrat","Google Sans","Helvetica Neue",Arial,sans-serif;--pill:64px;color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:radial-gradient(120% 60% at 50% 0,#12403A 0,var(--forest-night) 40%,var(--night) 100%) no-repeat var(--night);color:var(--off);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
-button,input,select{font:inherit;color:inherit}
+button,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
-main{width:min(560px,100%);margin:0 auto;padding:calc(40px + env(safe-area-inset-top)) 16px 60px;display:grid;gap:22px}
+[hidden]{display:none!important}
+main{width:min(860px,100%);margin:0 auto;padding:calc(36px + env(safe-area-inset-top)) 16px 64px;display:grid;gap:22px}
 .lbl{margin:0;font:600 11.5px/1.4 var(--label);letter-spacing:.22em;text-transform:uppercase;color:var(--gold-soft)}
-h1{margin:0;font-size:clamp(30px,7vw,40px);line-height:1.1;font-weight:700;color:var(--paper)}
+h1{margin:0;font-size:clamp(28px,6vw,38px);line-height:1.1;font-weight:700;color:var(--paper)}
+h2{margin:0;font-size:21px;line-height:1.25;color:var(--paper)}
+h3{margin:0;font:600 11.5px/1.4 var(--label);letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft)}
 .lede{margin:0;color:var(--muted)}
+.head{display:flex;flex-wrap:wrap;align-items:end;gap:10px 16px;justify-content:space-between}
 .card{display:grid;gap:16px;padding:22px;border-radius:22px;background:rgba(254,251,241,.04);border:1px solid var(--rule)}
-.step{display:flex;align-items:center;gap:12px;font-weight:700;color:var(--paper)}
-.step i{font:700 12px/1 var(--label);font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--gold);color:var(--gold)}
 label{display:grid;gap:6px;font-size:14px;color:var(--muted)}
-input,select{width:100%;height:50px;padding-inline:16px;border-radius:14px;border:1px solid rgba(254,251,241,.28);background:rgba(10,9,8,.45);color:var(--paper);font-size:16px}
-input:focus,select:focus{outline:none;border-color:var(--gold)}
-input.code{font:600 17px/1 var(--label);letter-spacing:.14em;text-transform:uppercase}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media (max-width:480px){.row{grid-template-columns:1fr}}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding-inline:22px;border-radius:var(--pill);border:1px solid var(--gold);background:radial-gradient(130% 160% at 0 0,rgba(244,175,86,.24),transparent 46%);color:var(--off);font-weight:700;cursor:pointer;text-decoration:none}
+input{width:100%;height:48px;padding-inline:16px;border-radius:14px;border:1px solid rgba(254,251,241,.28);background:rgba(10,9,8,.45);color:var(--paper);font-size:16px}
+input:focus{outline:none;border-color:var(--gold)}
+input.code{font:600 16px/1 var(--label);letter-spacing:.12em;text-transform:uppercase}
+.row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+@media (max-width:640px){.row{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding-inline:20px;border-radius:var(--pill);border:1px solid var(--gold);background:radial-gradient(130% 160% at 0 0,rgba(244,175,86,.24),transparent 46%);color:var(--off);font-weight:700;cursor:pointer;white-space:nowrap}
 .btn:disabled{opacity:.5;cursor:default}
 .btn.ghost{border-color:rgba(244,244,244,.35);background:none}
+.btn.small{min-height:36px;padding-inline:14px;font-size:13.5px}
+.btn.danger{border-color:rgba(240,138,122,.55);background:none;color:#F7B2A6}
 .hint{margin:0;font-size:13.5px;color:var(--faint)}
-.msg{margin:0;min-height:1.5em;font-size:14.5px}
+.msg{margin:0;min-height:1.4em;font-size:14.5px}
 .msg.err{color:var(--red)} .msg.ok{color:var(--leaf)}
-ol{margin:0;padding-inline-start:20px;display:grid;gap:8px;color:var(--muted)}
-ol b{color:var(--paper)}
-code{font:600 13.5px/1 var(--label);color:var(--gold-soft)}
-[hidden]{display:none!important}
+.tour-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.tour-h .ph{width:52px;height:52px;border-radius:12px;background:#1A2422 center/cover no-repeat;flex:none}
+.tour-h div{flex:1;min-width:180px}
+.tour-h small{display:block;color:var(--faint);font-size:13.5px}
+.pill{font:600 10.5px/1 var(--label);letter-spacing:.14em;text-transform:uppercase;padding:6px 10px;border-radius:var(--pill);border:1px solid var(--rule);color:var(--faint);white-space:nowrap}
+.pill.on{border-color:rgba(169,196,140,.6);color:var(--leaf)}
+.pill.off{border-color:rgba(232,162,62,.55);color:var(--amber)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{text-align:start;font:600 11px/1.3 var(--label);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);padding:8px 8px 8px 0;border-bottom:1px solid var(--rule)}
+td{padding:10px 8px 10px 0;border-bottom:1px solid rgba(254,251,241,.07);color:var(--muted);font-variant-numeric:tabular-nums;vertical-align:middle}
+td b{color:var(--paper);font-weight:700}
+.tbl{overflow-x:auto}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.gal figure{position:relative;margin:0;border-radius:12px;overflow:hidden;background:#14120F;aspect-ratio:1}
+.gal img{display:block;width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.gal figcaption{position:absolute;inset-inline:0;bottom:0;padding:18px 8px 6px;font-size:11.5px;line-height:1.3;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.75))}
+.gal button{position:absolute;top:6px;inset-inline-end:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(10,9,8,.75);color:#F7B2A6;font-size:16px;line-height:1;cursor:pointer}
+.empty{color:var(--faint);font-size:14px;margin:0}
+.zoom{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(5,5,4,.92);cursor:zoom-out}
+.zoom img{max-width:100%;max-height:100%;border-radius:10px}
 </style>
 </head>
 <body>
 <main>
-  <div style="display:grid;gap:8px">
-    <p class="lbl">MW Photo Tours · Admin</p>
-    <h1>Change an expedition code</h1>
-    <p class="lede">Pick the expedition, type its current code and the new one. This page makes a new version of the expedition page locked with the new code. Everything happens on this device; codes are never sent anywhere.</p>
+  <div class="head">
+    <div style="display:grid;gap:8px">
+      <p class="lbl">MW Photo Tours · Admin</p>
+      <h1>Expeditions</h1>
+    </div>
+    <button class="btn ghost small" id="out" type="button" hidden>Sign out</button>
   </div>
 
-  <form class="card" id="f" autocomplete="off">
-    <div class="step"><i>1</i>Expedition</div>
-    <select id="tour" required></select>
-    <div class="step"><i>2</i>Codes</div>
-    <label>Current code<input class="code" id="old" required spellcheck="false" autocapitalize="characters"></label>
-    <div class="row">
-      <label>New code<input class="code" id="new1" required spellcheck="false" autocapitalize="characters"></label>
-      <label>New code again<input class="code" id="new2" required spellcheck="false" autocapitalize="characters"></label>
-    </div>
-    <p class="hint">Codes ignore capital letters, spaces and dashes: <code>assam-2026</code> and <code>ASSAM 2026</code> are the same code. Use at least 6 characters.</p>
-    <button class="btn" id="run" type="submit">Make the new version</button>
-    <p class="msg" id="msg" role="status"></p>
+  <!-- sign in -->
+  <form class="card" id="login" autocomplete="on">
+    <p class="lede">Sign in with the admin login created in Supabase.</p>
+    <label>Email<input id="em" type="email" autocomplete="username" required></label>
+    <label>Password<input id="pw" type="password" autocomplete="current-password" required></label>
+    <button class="btn" id="go" type="submit">Sign in</button>
+    <p class="msg" id="lmsg" role="status"></p>
   </form>
 
-  <section class="card" id="done" hidden>
-    <div class="step"><i>3</i>Upload it</div>
-    <ol>
-      <li><b>Download</b> the new page: <a class="btn ghost" id="dl" download="index.html" style="min-height:40px;margin-top:6px">Download index.html</a></li>
-      <li>On GitHub, open the expedition’s folder <code id="folder"></code> and choose <b>Add file → Upload files</b><span id="uplink"></span>.</li>
-      <li>Drop in the downloaded <b>index.html</b> (it replaces the old one) and press <b>Commit changes</b>.</li>
-      <li>After a minute or two the new code works. Travelers who saved the old code will be asked for the new one.</li>
-    </ol>
-  </section>
+  <div id="app" hidden style="display:grid;gap:22px">
+    <p class="lede">Each expedition: its traveler code, who joined, and the photos they shared. Travelers join with the code + their name; with the same code + name they can open it on any phone or computer.</p>
+    <div id="tours" style="display:grid;gap:22px"></div>
+  </div>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 (() => {
+const CFG = { url: 'https://uiydebfzuxnxjqcnrylv.supabase.co', key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpeWRlYmZ6dXhueGpxY25yeWx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNzY2MjksImV4cCI6MjEwNjc1MjYyOX0.JwQ2bAjMrZZCnhFq79V8W5lnzcNz-zpf8IW6xFC4Mko' };
 const $ = s => document.querySelector(s);
-const norm = c => c.toUpperCase().replace(/[\s\-–_.]/g, '');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = c => String(c || '').toUpperCase().replace(/[\s\-–_.]/g, '');
+const fmt = d => d ? new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–';
+const sb = window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: true, storageKey: 'mw-admin-session', detectSessionInUrl: false } });
+let list = [], urls = {};
+
+// check a code really opens an expedition page (same lock the pages use: PBKDF2-SHA256 → AES-GCM)
 const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-const toB64 = u => { let s = ''; u.forEach(b => s += String.fromCharCode(b)); return btoa(s); };
-const VAULT_RE = /(<script id="vault" type="application\/json">)([\s\S]*?)(<\/script>)/;
-let tours = [];
-
-// the same lock the expedition pages use: PBKDF2-SHA256 → AES-GCM 256
-async function keyFor(code, salt, iter, use) {
+async function opens(path, code) {
+  const html = await fetch('../' + path + 'index.html', { cache: 'no-store' }).then(r => r.text());
+  const v = JSON.parse(html.match(/<script id="vault" type="application\/json">([\s\S]*?)<\/script>/)[1]);
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(norm(code)), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, [use]);
-}
-async function unlock(v, code) {
-  const k = await keyFor(code, b64(v.salt), v.iter, 'decrypt');
-  return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(v.iv) }, k, b64(v.data)));
-}
-async function lock(v, plain, code) {
-  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
-  const k = await keyFor(code, salt, v.iter, 'encrypt');
-  const data = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, plain));
-  return { ...v, salt: toB64(salt), iv: toB64(iv), data: toB64(data) };
+  const k = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(v.salt), iterations: v.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  try { await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(v.iv) }, k, b64(v.data)); return true; } catch (e) { return false; }
 }
 
-function say(t, cls) { const m = $('#msg'); m.textContent = t; m.className = 'msg' + (cls ? ' ' + cls : ''); }
+async function load() {
+  const [cfg, ov] = await Promise.all([
+    fetch('../tours.json', { cache: 'no-cache' }).then(r => r.json()),
+    sb.rpc('admin_overview'),
+  ]);
+  if (ov.error) { $('#app').hidden = true; $('#login').hidden = false; $('#out').hidden = false; say($('#lmsg'), /not_admin/.test(ov.error.message) ? 'This login is not an expedition admin yet. Run the "make Matan an admin" query from the setup file.' : 'Could not load: ' + ov.error.message, 'err'); return; }
+  const db = Object.fromEntries((ov.data || []).map(t => [t.slug, t]));
+  list = (cfg.tours || []).filter(t => t.slug).map(t => ({ ...t, db: db[t.slug] || null }));
+  const { data: ph } = await sb.from('photos').select('id,tour_slug,item_kind,item_id,path,created_at,members(name)').order('created_at', { ascending: false });
+  const photos = ph || [];
+  const need = photos.map(p => p.path.replace(/\.jpg$/, '_t.jpg')).concat(photos.map(p => p.path)).filter(p => !urls[p]);
+  for (let i = 0; i < need.length; i += 100) {
+    const { data: s } = await sb.storage.from('tour-photos').createSignedUrls(need.slice(i, i + 100), 3600 * 6);
+    (s || []).forEach(x => { if (x.signedUrl) urls[x.path] = x.signedUrl; });
+  }
+  render(photos);
+}
 
-$('#f').addEventListener('submit', async e => {
-  e.preventDefault();
-  $('#done').hidden = true;
-  const t = tours[+$('#tour').value], old = $('#old').value, n1 = $('#new1').value, n2 = $('#new2').value;
-  if (!t) return say('Choose an expedition.', 'err');
-  if (norm(n1) !== norm(n2)) return say('The two new codes don’t match.', 'err');
-  if (norm(n1).length < 6) return say('The new code needs at least 6 letters or numbers.', 'err');
-  if (norm(n1) === norm(old)) return say('The new code is the same as the current one.', 'err');
-  const btn = $('#run'); btn.disabled = true; say('Working… this takes a few seconds.');
-  try {
-    const html = await fetch('../' + t.path + 'index.html', { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error('page'); return r.text(); });
-    const m = html.match(VAULT_RE); if (!m) throw new Error('vault');
-    const v = JSON.parse(m[2]);
-    let plain;
-    try { plain = await unlock(v, old); } catch (err) { throw new Error('code'); }
-    const nv = await lock(v, plain, n1);
-    // check the new version opens with the new code before handing it over
-    const back = await unlock(nv, n1); if (back.length !== plain.length) throw new Error('verify');
-    const out = html.replace(VAULT_RE, (_, a, __, c) => a + JSON.stringify(nv) + c);
-    const a = $('#dl'); if (a.href) URL.revokeObjectURL(a.href);
-    a.href = URL.createObjectURL(new Blob([out], { type: 'text/html' }));
-    $('#folder').textContent = t.path;
-    const gh = location.hostname.endsWith('.github.io') ? { owner: location.hostname.split('.')[0], repo: location.pathname.split('/').filter(Boolean)[0] } : { owner: 'lululab-ctrl', repo: 'Manas-Kaziranga' };   // the custom domain (tours.mw.photography) serves this repo
-    $('#uplink').innerHTML = gh && gh.repo ? ` (<a href="https://github.com/${gh.owner}/${gh.repo}/upload/main/${t.path}" target="_blank" rel="noopener" style="color:var(--gold-soft)">open it directly</a>)` : '';
-    $('#done').hidden = false; $('#done').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    say('Done. The new version is locked with the new code and was checked.', 'ok');
-  } catch (err) {
-    say({ code: 'The current code is wrong for this expedition.', page: 'Couldn’t load this expedition’s page. Check its folder name in tours.json.', vault: 'This page has no locked content to change.' }[err.message] || 'Something went wrong. Please try again.', 'err');
-  } finally { btn.disabled = false; }
+function render(photos) {
+  $('#tours').innerHTML = list.map((t, i) => {
+    const d = t.db, ready = d && d.ready, mem = d ? d.members : [], tp = photos.filter(p => p.tour_slug === t.slug);
+    return `<section class="card" data-i="${i}">
+      <div class="tour-h"><span class="ph" style="background-image:url('../${esc(t.cover || '')}')"></span>
+        <div><h2>${esc(t.title?.en || t.slug)}</h2><small>${esc(t.place?.en || '')} · ${esc(t.start || '')} → ${esc(t.end || '')}</small></div>
+        <span class="pill ${ready ? 'on' : 'off'}">${ready ? 'Connected' : 'Not connected'}</span></div>
+
+      <h3>${ready ? 'Traveler code' : 'Connect this expedition'}</h3>
+      ${ready ? `<div class="row"><label>New traveler code<input class="code" data-new spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026"></label>
+          <label>Type it again<input class="code" data-new2 spellcheck="false" autocapitalize="characters"></label>
+          <button class="btn" type="button" data-save>Change code</button></div>
+        <p class="hint">Changes at once. New travelers need the new code; those who already joined stay in.</p>`
+      : `<div class="row"><label>Current code of this expedition<input class="code" data-secret spellcheck="false" autocapitalize="characters" placeholder="the code it opens with today"></label>
+          <label>Traveler code <span style="color:var(--faint)">(optional)</span><input class="code" data-new spellcheck="false" autocapitalize="characters"></label>
+          <button class="btn" type="button" data-connect>Connect</button></div>
+        <p class="hint">Needed once. The current code is checked against the page before saving. Leave the traveler code empty to keep the current one.</p>`}
+      <p class="msg" data-msg role="status"></p>
+
+      <h3>Travelers · ${mem.length}</h3>
+      ${mem.length ? `<div class="tbl"><table><thead><tr><th>Name</th><th>Joined</th><th>Last active</th><th>Visits</th><th>Photos</th><th></th></tr></thead><tbody>
+        ${mem.map(m => `<tr><td><b>${esc(m.name)}</b></td><td>${fmt(m.joined)}</td><td>${fmt(m.last_seen)}</td><td>${m.visits}</td><td>${m.photos}</td>
+          <td><button class="btn danger small" type="button" data-rm="${esc(m.id)}" data-name="${esc(m.name)}">Remove</button></td></tr>`).join('')}
+        </tbody></table></div>` : '<p class="empty">No one has joined yet.</p>'}
+
+      <h3>Shared photos · ${tp.length}</h3>
+      ${tp.length ? `<div class="gal">${tp.map(p => `<figure><img loading="lazy" src="${esc(urls[p.path.replace(/\.jpg$/, '_t.jpg')] || urls[p.path] || '')}" data-full="${esc(urls[p.path] || '')}" alt="">
+          <figcaption>${esc(p.members?.name || '')} · ${esc(p.item_id.replace(/-/g, ' '))}</figcaption><button type="button" data-delph="${p.id}" data-path="${esc(p.path)}" aria-label="Delete photo">×</button></figure>`).join('')}</div>`
+        : '<p class="empty">No photos yet.</p>'}
+    </section>`;
+  }).join('') || '<p class="empty">No expeditions in tours.json.</p>';
+}
+
+function say(el, t, c) { el.textContent = t; el.className = 'msg' + (c ? ' ' + c : ''); }
+
+$('#tours').addEventListener('click', async e => {
+  const card = e.target.closest('.card'); if (!card) return;
+  const t = list[+card.dataset.i], msg = card.querySelector('[data-msg]');
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (btn.matches('[data-connect]')) {
+    const secret = card.querySelector('[data-secret]').value, code = card.querySelector('[data-new]').value || secret;
+    if (norm(secret).length < 4) return say(msg, 'Type the code this expedition opens with today.', 'err');
+    btn.disabled = true; say(msg, 'Checking the code against the page…');
+    try {
+      if (!await opens(t.path, secret)) { btn.disabled = false; return say(msg, 'That code does not open this expedition. Check it and try again.', 'err'); }
+      const { error } = await sb.rpc('admin_set_tour', { p_slug: t.slug, p_title: t.title?.en || t.slug, p_secret: secret, p_code: code });
+      if (error) throw error;
+      say(msg, 'Connected.', 'ok'); await load();
+    } catch (err) { btn.disabled = false; say(msg, 'Could not save: ' + (err.message || err), 'err'); }
+  }
+  if (btn.matches('[data-save]')) {
+    const a = card.querySelector('[data-new]').value, b = card.querySelector('[data-new2]').value;
+    if (norm(a).length < 4) return say(msg, 'Use at least 4 letters or numbers.', 'err');
+    if (norm(a) !== norm(b)) return say(msg, 'The two codes don’t match.', 'err');
+    btn.disabled = true;
+    const { error } = await sb.rpc('admin_set_tour', { p_slug: t.slug, p_title: null, p_secret: null, p_code: a });
+    btn.disabled = false;
+    if (error) return say(msg, 'Could not save: ' + error.message, 'err');
+    card.querySelector('[data-new]').value = card.querySelector('[data-new2]').value = '';
+    say(msg, `Done. The traveler code is now ${norm(a)}.`, 'ok');
+  }
+  if (btn.matches('[data-rm]')) {
+    if (!confirm(`Remove ${btn.dataset.name} from this expedition? Their progress and photos go too.`)) return;
+    const { error } = await sb.rpc('admin_remove_member', { p_member: btn.dataset.rm });
+    if (error) return say(msg, 'Could not remove: ' + error.message, 'err');
+    await load();
+  }
+  if (btn.matches('[data-delph]')) {
+    if (!confirm('Delete this photo for everyone?')) return;
+    const p = btn.dataset.path;
+    await sb.storage.from('tour-photos').remove([p, p.replace(/\.jpg$/, '_t.jpg')]);
+    const { error } = await sb.from('photos').delete().eq('id', +btn.dataset.delph);
+    if (error) return say(msg, 'Could not delete: ' + error.message, 'err');
+    await load();
+  }
+});
+$('#tours').addEventListener('click', e => {
+  const img = e.target.closest('.gal img'); if (!img || !img.dataset.full) return;
+  const z = document.createElement('div'); z.className = 'zoom'; z.innerHTML = `<img src="${esc(img.dataset.full)}" alt="">`; z.onclick = () => z.remove(); document.body.appendChild(z);
 });
 
-fetch('../tours.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
-  tours = (d.tours || []).filter(t => t && t.path);
-  $('#tour').innerHTML = tours.map((t, i) => `<option value="${i}">${(t.title && (t.title.en || t.title.he)) || t.path}${t.start ? ' · ' + t.start : ''}</option>`).join('');
-}).catch(() => say('Couldn’t load the list of expeditions.', 'err'));
+$('#login').addEventListener('submit', async e => {
+  e.preventDefault();
+  const m = $('#lmsg'); $('#go').disabled = true; say(m, 'Signing in…');
+  const { error } = await sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value });
+  $('#go').disabled = false;
+  if (error) return say(m, 'Wrong email or password.', 'err');
+  say(m, ''); show(true);
+});
+$('#out').addEventListener('click', async () => { await sb.auth.signOut(); show(false); });
+
+async function show(on) {
+  $('#login').hidden = on; $('#app').hidden = !on; $('#out').hidden = !on;
+  if (on) await load();
+}
+sb.auth.getSession().then(({ data }) => show(!!(data.session && !data.session.user.is_anonymous)));
 })();
 </script>
 </body>
