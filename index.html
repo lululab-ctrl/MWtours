@@ -52,6 +52,10 @@ button,input{font:inherit;color:inherit}
 .box button{width:40px;height:40px;border-radius:50%;border:0;background:none;color:var(--faint);display:grid;place-items:center;cursor:pointer;transition:transform .3s var(--ease),color .3s}
 .box button:hover{color:var(--paper)}
 .box button[hidden]{display:none}
+.list.scroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(254,251,241,.25) transparent}
+.list.more-below{-webkit-mask-image:linear-gradient(#000 calc(100% - 34px),transparent);mask-image:linear-gradient(#000 calc(100% - 34px),transparent)}
+.list.more-above{-webkit-mask-image:linear-gradient(transparent,#000 36px);mask-image:linear-gradient(transparent,#000 36px)}
+.list.more-above.more-below{-webkit-mask-image:linear-gradient(transparent,#000 36px,#000 calc(100% - 34px),transparent);mask-image:linear-gradient(transparent,#000 36px,#000 calc(100% - 34px),transparent)}
 .list{margin:12px 0 0;padding:6px;list-style:none;display:grid;gap:2px;border-radius:22px;background:rgba(14,22,20,.72);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--rule);box-shadow:0 22px 60px rgba(0,0,0,.35)}
 .opt{display:grid;grid-template-columns:56px minmax(0,1fr) auto;align-items:center;gap:14px;padding:8px 10px 8px 8px;border-radius:16px;cursor:pointer;text-decoration:none;color:inherit;transition:background-color .2s}
 [dir=rtl] .opt{padding:8px 8px 8px 10px}
@@ -155,8 +159,23 @@ function render() {
       <span class="sts"><span class="st ${st}">${esc(L.st[st])}</span></span></a></li>`;
   }).join('') : `<li class="empty">${esc(tours.length ? L.empty : L.loadErr)}</li>`;
   q.setAttribute('aria-activedescendant', active >= 0 ? 'o' + active : '');
+  fitList();
 }
 const coarse = matchMedia('(pointer:coarse)');
+// three expeditions in view; with more, the list scrolls inside its box, softly faded where more is hidden
+function fitList() {
+  const rows = list.querySelectorAll(':scope > li');
+  if (rows.length <= 3) { list.style.maxHeight = ''; list.classList.remove('scroll', 'more-below', 'more-above'); return; }
+  const third = rows[2];
+  list.style.maxHeight = (third.offsetTop + third.offsetHeight + 30) + 'px';   // the next one peeks out: there is more
+  list.classList.add('scroll'); edges();
+}
+function edges() {
+  list.classList.toggle('more-above', list.scrollTop > 4);
+  list.classList.toggle('more-below', list.scrollTop + list.clientHeight < list.scrollHeight - 4);
+}
+list.addEventListener('scroll', edges, { passive: true });
+addEventListener('resize', fitList);
 function move(d) {
   if (!shown.length) return;
   active = (active + d + shown.length) % shown.length;
