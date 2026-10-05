@@ -8,6 +8,14 @@
       "start": "2026-11-01",
       "end": "2026-11-09",
       "cover": "manas-kaziranga/photos/kaz.jpg"
+    },
+    {
+      "path": "iberian-lynx/",
+      "title": { "en": "The Iberian Lynx", "he": "השונר האיברי" },
+      "place": { "en": "Spain", "he": "ספרד" },
+      "start": "2026-11-12",
+      "end": "2026-11-15",
+      "cover": "iberian-lynx/photos/lynx.jpg"
     }
   ]
 }
