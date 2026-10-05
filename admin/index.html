@@ -31,7 +31,14 @@ input{width:100%;height:48px;padding-inline:16px;border-radius:14px;border:1px s
 input:focus{outline:none;border-color:var(--gold)}
 input.code{font:600 16px/1 var(--label);letter-spacing:.12em;text-transform:uppercase}
 .row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
-@media (max-width:640px){.row{grid-template-columns:1fr}}
+.row.one{grid-template-columns:minmax(0,1fr) auto}
+.search{position:relative}
+.search svg{position:absolute;top:50%;inset-inline-start:18px;width:20px;height:20px;margin-top:-10px;fill:none;stroke:var(--gold-soft);stroke-width:1.6;stroke-linecap:round}
+.search input{height:54px;padding-inline:50px 18px;border-radius:var(--pill)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill.past{border-color:var(--rule);color:var(--faint)}
+.card.ended{opacity:.78}
+@media (max-width:640px){.row,.row.one{grid-template-columns:1fr}}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding-inline:20px;border-radius:var(--pill);border:1px solid var(--gold);background:radial-gradient(130% 160% at 0 0,rgba(244,175,86,.24),transparent 46%);color:var(--off);font-weight:700;cursor:pointer;white-space:nowrap}
 .btn:disabled{opacity:.5;cursor:default}
 .btn.ghost{border-color:rgba(244,244,244,.35);background:none}
@@ -82,7 +89,9 @@ td b{color:var(--paper);font-weight:700}
   </form>
 
   <div id="app" hidden style="display:grid;gap:22px">
-    <p class="lede">Each expedition: its traveler code, who joined, and the photos they shared. Travelers join with the code + their name; with the same code + name they can open it on any phone or computer.</p>
+    <p class="lede">Each expedition: its code, who joined, and the photos they shared. Travelers join with the code + their name; with the same code + name they can open it on any phone or computer.</p>
+    <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      <input id="q" type="search" placeholder="Search expeditions by name, place or month" aria-label="Search expeditions" autocomplete="off"></div>
     <div id="tours" style="display:grid;gap:22px"></div>
   </div>
 </main>
@@ -114,7 +123,11 @@ async function load() {
   ]);
   if (ov.error) { $('#app').hidden = true; $('#login').hidden = false; $('#out').hidden = false; say($('#lmsg'), /not_admin/.test(ov.error.message) ? 'This login is not an expedition admin yet. Run the "make Matan an admin" query from the setup file.' : 'Could not load: ' + ov.error.message, 'err'); return; }
   const db = Object.fromEntries((ov.data || []).map(t => [t.slug, t]));
-  list = (cfg.tours || []).filter(t => t.slug).map(t => ({ ...t, db: db[t.slug] || null }));
+  const today = new Date().toISOString().slice(0, 10);
+  const when = t => t.end && today > t.end ? 'past' : t.start && today >= t.start ? 'now' : 'soon';
+  const rank = { now: 0, soon: 1, past: 2 };
+  list = (cfg.tours || []).filter(t => t.slug).map(t => ({ ...t, db: db[t.slug] || null, when: when(t) }))
+    .sort((a, b) => rank[a.when] - rank[b.when] || (a.when === 'past' ? (b.start || '').localeCompare(a.start || '') : (a.start || '').localeCompare(b.start || '')));
   const { data: ph } = await sb.from('photos').select('id,tour_slug,item_kind,item_id,path,created_at,members(name)').order('created_at', { ascending: false });
   const photos = ph || [];
   const need = photos.map(p => p.path.replace(/\.jpg$/, '_t.jpg')).concat(photos.map(p => p.path)).filter(p => !urls[p]);
@@ -125,23 +138,31 @@ async function load() {
   render(photos);
 }
 
+let lastPhotos = [];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const hay = t => [t.title?.en, t.title?.he, t.place?.en, t.place?.he, t.slug, t.start, t.end,
+  ...[t.start, t.end].filter(Boolean).map(d => MONTHS[+d.slice(5, 7) - 1] + ' ' + d.slice(0, 4))].join(' ').toLowerCase();
+const nice = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 function render(photos) {
-  $('#tours').innerHTML = list.map((t, i) => {
+  if (photos) lastPhotos = photos; else photos = lastPhotos;
+  const term = ($('#q').value || '').trim().toLowerCase();
+  const shown = list.map((t, i) => [t, i]).filter(([t]) => !term || hay(t).includes(term));
+  $('#tours').innerHTML = shown.map(([t, i]) => {
     const d = t.db, ready = d && d.ready, mem = d ? d.members : [], tp = photos.filter(p => p.tour_slug === t.slug);
-    return `<section class="card" data-i="${i}">
+    return `<section class="card${t.when === 'past' ? ' ended' : ''}" data-i="${i}">
       <div class="tour-h"><span class="ph" style="background-image:url('../${esc(t.cover || '')}')"></span>
-        <div><h2>${esc(t.title?.en || t.slug)}</h2><small>${esc(t.place?.en || '')} · ${esc(t.start || '')} → ${esc(t.end || '')}</small></div>
-        <span class="pill ${ready ? 'on' : 'off'}">${ready ? 'Connected' : 'Not connected'}</span></div>
+        <div><h2>${esc(t.title?.en || t.slug)}</h2><small>${esc(t.place?.en || '')} · ${esc(nice(t.start))} – ${esc(nice(t.end))}</small></div>
+        <span class="pills"><span class="pill ${t.when === 'past' ? 'past' : t.when === 'now' ? 'on' : 'off'}">${t.when === 'past' ? 'Ended' : t.when === 'now' ? 'Happening now' : 'Upcoming'}</span>
+        <span class="pill ${ready ? 'on' : 'off'}">${ready ? 'Connected' : 'Not connected'}</span></span></div>
 
-      <h3>${ready ? 'Traveler code' : 'Connect this expedition'}</h3>
-      ${ready ? `<div class="row"><label>New traveler code<input class="code" data-new spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026"></label>
+      <h3>${ready ? 'Expedition code' : 'Connect this expedition'}</h3>
+      ${ready ? `<div class="row"><label>New code<input class="code" data-new spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026"></label>
           <label>Type it again<input class="code" data-new2 spellcheck="false" autocapitalize="characters"></label>
           <button class="btn" type="button" data-save>Change code</button></div>
-        <p class="hint">Changes at once. New travelers need the new code; those who already joined stay in.</p>`
-      : `<div class="row"><label>Current code of this expedition<input class="code" data-secret spellcheck="false" autocapitalize="characters" placeholder="the code it opens with today"></label>
-          <label>Traveler code <span style="color:var(--faint)">(optional)</span><input class="code" data-new spellcheck="false" autocapitalize="characters"></label>
+        <p class="hint">Changes at once. New travelers use the new code; those who already joined stay in.</p>`
+      : `<div class="row one"><label>The code this expedition opens with today<input class="code" data-secret spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026"></label>
           <button class="btn" type="button" data-connect>Connect</button></div>
-        <p class="hint">Needed once. The current code is checked against the page before saving. Leave the traveler code empty to keep the current one.</p>`}
+        <p class="hint">Needed only once. The code is checked against the expedition before saving; after that travelers join with this code + their name.</p>`}
       <p class="msg" data-msg role="status"></p>
 
       <h3>Travelers · ${mem.length}</h3>
@@ -155,7 +176,7 @@ function render(photos) {
           <figcaption>${esc(p.members?.name || '')} · ${esc(p.item_id.replace(/-/g, ' '))}</figcaption><button type="button" data-delph="${p.id}" data-path="${esc(p.path)}" aria-label="Delete photo">×</button></figure>`).join('')}</div>`
         : '<p class="empty">No photos yet.</p>'}
     </section>`;
-  }).join('') || '<p class="empty">No expeditions in tours.json.</p>';
+  }).join('') || `<p class="empty">${term ? 'No expedition matches that search.' : 'No expeditions in tours.json.'}</p>`;
 }
 
 function say(el, t, c) { el.textContent = t; el.className = 'msg' + (c ? ' ' + c : ''); }
@@ -165,7 +186,7 @@ $('#tours').addEventListener('click', async e => {
   const t = list[+card.dataset.i], msg = card.querySelector('[data-msg]');
   const btn = e.target.closest('button'); if (!btn) return;
   if (btn.matches('[data-connect]')) {
-    const secret = card.querySelector('[data-secret]').value, code = card.querySelector('[data-new]').value || secret;
+    const secret = card.querySelector('[data-secret]').value, code = secret;
     if (norm(secret).length < 4) return say(msg, 'Type the code this expedition opens with today.', 'err');
     btn.disabled = true; say(msg, 'Checking the code against the page…');
     try {
@@ -184,7 +205,7 @@ $('#tours').addEventListener('click', async e => {
     btn.disabled = false;
     if (error) return say(msg, 'Could not save: ' + error.message, 'err');
     card.querySelector('[data-new]').value = card.querySelector('[data-new2]').value = '';
-    say(msg, `Done. The traveler code is now ${norm(a)}.`, 'ok');
+    say(msg, `Done. The code is now ${norm(a)}.`, 'ok');
   }
   if (btn.matches('[data-rm]')) {
     if (!confirm(`Remove ${btn.dataset.name} from this expedition? Their progress and photos go too.`)) return;
@@ -214,6 +235,7 @@ $('#login').addEventListener('submit', async e => {
   if (error) return say(m, 'Wrong email or password.', 'err');
   say(m, ''); show(true);
 });
+$('#q').addEventListener('input', () => render());
 $('#out').addEventListener('click', async () => { await sb.auth.signOut(); show(false); });
 
 async function show(on) {
