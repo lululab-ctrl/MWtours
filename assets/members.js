@@ -42,12 +42,12 @@ const T = {
         many: 'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.', nameHint: 'באותו קוד ושם תוכלו להיכנס מכל טלפון או מחשב.',
         photos: 'תמונות הקבוצה', add: 'הוספת תמונה', adding: 'מעלים…', none: 'עדיין אין תמונות. אולי שלכם תהיה הראשונה?', you: 'אתם',
         del: 'מחיקה', delQ: 'למחוק את התמונה?', close: 'סגירה', prev: 'הקודמת', next: 'הבאה', failed: 'ההעלאה לא הצליחה. נסו שוב כשיש קליטה.',
-        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו אפשר להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
+        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
   en: { name: 'Your name', namePh: 'First and last name', needName: 'Type your name.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
         many: 'Too many tries. Please wait a few minutes.', nameHint: 'With the same code and name you can open it on any phone or computer.',
         photos: 'Group photos', add: 'Add photo', adding: 'Uploading…', none: 'No photos yet. Yours could be the first.', you: 'You',
         del: 'Delete', delQ: 'Delete this photo?', close: 'Close', prev: 'Previous', next: 'Next', failed: "The upload didn't work. Try again when you have signal.",
-        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap Add photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
+        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap + to add a photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
 };
 const W = () => T[(document.documentElement.lang || 'he').startsWith('en') ? 'en' : 'he'];
 
@@ -211,23 +211,21 @@ async function loadPhotos(force) {
   } catch (e) { loadedAt = 0; }
 }
 
-const ADD_BTN = w => `<button type="button" class="mwp-add" data-mwp-add><svg viewBox="0 0 24 24"><path d="M3.5 8.5a2 2 0 0 1 2-2h2.2L9.5 4h5l1.8 2.5h2.2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg><span>${esc(w.add)}</span></button>`;
-function tileBlock(tile) {
-  const it = itemOf(tile), list = forItem(it), w = W(), max = 5;
-  if (!member) return `<div class="mwp-h"><span>${esc(w.photos)}</span></div><p class="mwp-none">${esc(w.joinFirst)}</p>${ADD_BTN(w)}`;
-  const th = list.slice(0, max).map((p, i) => `<button type="button" class="mwp-t" data-mwp-open="${i}" style="background-image:url('${esc(urls[thumbOf(p.path)] || urls[p.path] || '')}')" aria-label="${esc((p.member_id === member.id ? w.you : p.members?.name || '') + ' · ' + w.photos)}"></button>`).join('')
-    + (list.length > max ? `<button type="button" class="mwp-t more" data-mwp-open="${max}">+${list.length - max}</button>` : '');
-  return `<div class="mwp-h"><span>${esc(w.photos)}</span>${list.length ? `<small>${list.length}</small>` : ''}</div>
-    ${list.length ? `<div class="mwp-row">${th}</div>` : `<p class="mwp-none">${esc(w.none)}</p>`}
-    ${ADD_BTN(w)}`;
+// on each card's picture: a round + to add a photo, and the group's photos as a small stack to open
+function overlay(tile) {
+  const it = itemOf(tile), list = member ? forItem(it) : [], w = W();
+  const stack = list.slice(0, 3).map(p => `<i style="background-image:url('${esc(urls[thumbOf(p.path)] || urls[p.path] || '')}')"></i>`).join('');
+  return `<button type="button" class="mwp-plus" data-mwp-add aria-label="${esc(w.add)}" title="${esc(w.add)}"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>`
+    + (list.length ? `<button type="button" class="mwp-stack" data-mwp-open="0" aria-label="${esc(w.photos + ': ' + list.length)}" title="${esc(w.photos)}">${stack}<b>${list.length}</b></button>` : '');
 }
 function decorate(refresh) {
   document.querySelectorAll('#field .ftile[id^="fa-"], #field .ftile[id^="fx-"]').forEach(tile => {
-    let b = tile.querySelector(':scope > .mwp');
-    if (b && !refresh) return;
-    if (!b) { b = document.createElement('div'); b.className = 'mwp'; tile.appendChild(b); }
-    if (b.dataset.busy) return;
-    b.innerHTML = tileBlock(tile);
+    const pic = tile.querySelector(':scope > .ph, :scope > .noph'); if (!pic) return;
+    let o = pic.querySelector(':scope > .mwp-ov');
+    if (o && !refresh) return;
+    if (!o) { o = document.createElement('div'); o.className = 'mwp-ov'; pic.appendChild(o); }
+    if (o.dataset.busy) return;
+    o.innerHTML = overlay(tile);
   });
 }
 
@@ -246,9 +244,9 @@ function toast(t) {
   el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 3200);
 }
 async function upload(tile, file) {
-  const it = itemOf(tile), w = W(), b = tile.querySelector('.mwp'), btn = b.querySelector('[data-mwp-add] span');
+  const it = itemOf(tile), w = W(), b = tile.querySelector('.mwp-ov');
   if (!navigator.onLine) return toast(w.offline);
-  b.dataset.busy = '1'; btn.textContent = w.adding;
+  b.dataset.busy = '1'; b.classList.add('busy');
   try {
     await session();
     const [full, small] = await Promise.all([shrink(file, 1600, 0.84), shrink(file, 420, 0.78)]);
@@ -260,7 +258,7 @@ async function upload(tile, file) {
     if (ins.error) { await sb.storage.from(BUCKET).remove([path, thumbOf(path)]); throw ins.error; }
     toast(w.added);
   } catch (e) { toast(w.failed); }
-  delete b.dataset.busy;
+  delete b.dataset.busy; b.classList.remove('busy');
   await loadPhotos(true);
 }
 
@@ -336,7 +334,7 @@ document.addEventListener('click', e => {
   if (!add && !open) return;
   const tile = e.target.closest('.ftile'); if (!tile) return;
   e.preventDefault(); e.stopPropagation();
-  if (add) { if (tile.querySelector('.mwp').dataset.busy) return; if (!member) return askName(); pickFor = tile; picker.click(); }
+  if (add) { if (tile.querySelector('.mwp-ov')?.dataset.busy) return; if (!member) return askName(); pickFor = tile; picker.click(); }
   else viewer(tile, +open.dataset.mwpOpen);
 }, true);
 
@@ -364,6 +362,18 @@ const css = `
 .mwp-go:disabled{opacity:.55}
 .mwp-card .mwp-x{top:10px}
 .mwp-msg{min-height:1.3em;color:#F4AF56!important;font-size:14px!important}
+.mwp-ov{position:absolute;inset:0;pointer-events:none;z-index:2}
+.mwp-ov>*{pointer-events:auto}
+.mwp-plus{position:absolute;top:10px;inset-inline-end:10px;width:40px;height:40px;padding:0;border-radius:50%;border:1px solid rgba(244,175,86,.75);background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#F4AF56;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:transform .25s,background-color .25s}
+.mwp-plus:hover{transform:scale(1.08);background:rgba(10,9,8,.8)}
+.mwp-plus svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.mwp-ov.busy .mwp-plus svg{animation:mwpSpin .9s linear infinite}
+@keyframes mwpSpin{to{transform:rotate(360deg)}}
+.mwp-stack{position:absolute;bottom:10px;inset-inline-start:10px;display:flex;align-items:center;gap:0;padding:4px 10px 4px 4px;border-radius:64px;border:1px solid rgba(254,251,241,.28);background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#FEFBF1;cursor:pointer;font:700 13px/1 "Google Sans",sans-serif}
+[dir=rtl] .mwp-stack{padding:4px 4px 4px 10px}
+.mwp-stack i{width:28px;height:28px;border-radius:50%;border:2px solid #14120F;background:#26221D center/cover no-repeat;margin-inline-start:-9px}
+.mwp-stack i:first-child{margin-inline-start:0}
+.mwp-stack b{margin-inline-start:7px}
 .mwp{display:grid;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid rgba(254,251,241,.12)}
 .mwp-h{display:flex;align-items:center;gap:8px;font:600 11px/1 Montserrat,"Google Sans",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#E4AA7C}
 [dir=rtl] .mwp-h{font:600 13px/1 "Google Sans",sans-serif;letter-spacing:0}
