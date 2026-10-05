@@ -257,6 +257,16 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .timeline::-webkit-scrollbar{display:none}
 .tl-play{flex:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--gold);background:rgba(244,175,86,.08);color:var(--gold);display:grid;place-items:center;cursor:pointer;margin-inline-end:4px;transition:background-color .3s,transform .3s var(--spring)}
 .tl-play:hover{background:rgba(244,175,86,.18)}
+/* previous / next sit at the two ends of the timeline; the days scroll between them */
+.timeline{overflow:hidden}
+.tl-days{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
+.tl-days::-webkit-scrollbar{display:none}
+.tl-days{-webkit-mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);padding-inline:6px}
+.tl-nav{flex:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--gold);background:rgba(244,175,86,.08);color:var(--gold);display:grid;place-items:center;cursor:pointer;padding:0;transition:background-color .3s,opacity .3s}
+.tl-nav:hover:not(:disabled){background:rgba(244,175,86,.18)}
+.tl-nav:disabled{opacity:.3;cursor:default}
+.tl-nav .ic{width:18px;height:18px}
+[dir=rtl] .tl-nav .flip{transform:scaleX(-1)}
 .tl-day{position:relative;flex:none;min-width:44px;height:42px;padding-inline:6px;border-radius:var(--pill);border:0;background:none;color:var(--muted);display:grid;align-content:center;justify-items:center;gap:2px;cursor:pointer;transition:background-color .3s,color .3s}
 .tl-day b{font:700 14px/1 var(--label);letter-spacing:.04em;font-variant-numeric:tabular-nums}
 .tl-day small{font-size:10.5px;line-height:1;color:var(--faint);font-variant-numeric:tabular-nums}
@@ -279,7 +289,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .daycard.swap>.c{animation:rise .45s var(--ease)}
 @keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 .daycard .c{display:grid;gap:8px}
-.daycard .hd{display:flex;align-items:center;gap:10px;padding-inline-end:124px;min-height:24px}
+.daycard .hd{display:flex;align-items:center;gap:10px;padding-inline-end:44px;min-height:24px}
 .daycard.intro .lbl{padding-inline-end:40px}
 .daycard .dl{font:700 11px/1 var(--label);letter-spacing:.2em;text-transform:uppercase;color:var(--amber)}
 [dir=rtl] .daycard .dl{font:700 14px/1 var(--sans);letter-spacing:0}
@@ -1739,16 +1749,17 @@ function factsHTML() {
 // the timeline: one chip per day, coloured by where we sleep
 function renderTimeline() {
   const tl = $('#timeline'), today = todayDate();
-  tl.innerHTML = `<button class="tl-play" type="button" data-play aria-label="${L.play}" title="${L.play}">${ic(playing ? 'pause' : 'play')}</button>` +
+  tl.innerHTML = `<button class="tl-nav" type="button" data-dstep="-1" aria-label="${L.prevDay}" title="${L.prevDay}">${ic('prev', 'flip')}</button><div class="tl-days">` +
     T.days.map(d => {
       const { m, d: dd } = parseDay(d.date);
       const big = d.n === 0 ? d.date.slice(8, 10) + '.' + pad2(m) : pad2(d.n);
       const small = d.n === 0 ? L.depart : `${dd}.${m}`;
       return `<button class="tl-day${d.date === today ? ' today' : ''}" role="tab" type="button" data-day="${d.n}" style="--area:${AREA[d.sun] || 'transparent'}" aria-label="${esc(d[lang].label + ' · ' + d[lang].title)}"><b>${esc(big)}</b><small>${esc(small)}</small></button>`;
-    }).join('');
+    }).join('') + `</div><button class="tl-nav" type="button" data-dstep="1" aria-label="${L.nextDay}" title="${L.nextDay}">${ic('next', 'flip')}</button>`;
   markTimeline();
 }
 function markTimeline() {
+  const nav = $$('#timeline .tl-nav'); if (nav.length) { nav[0].disabled = current <= 0; nav[1].disabled = current >= 9; }
   $$('#timeline .tl-day').forEach(b => {
     const n = +b.dataset.day, on = n === current;
     b.setAttribute('aria-selected', on); b.classList.toggle('done', current >= 0 && n < current);
@@ -1776,7 +1787,7 @@ function renderCard(anim) {
     const sun = d.sun ? sunTimes(d.date, T.places[d.sun].lonlat, T.tz) : null;
     const n = d.sun ? T.stories.filter(s => s.where === d.sun).length : 0;
     const isToday = sun && d.date === todayDate(), cd = isToday ? sunCountdown(sun) : '', xtra = dayExtras(d);
-    html = `<div class="ctl"><button type="button" data-dstep="-1" aria-label="${L.prevDay}"${current <= 0 ? ' disabled' : ''}>${ic('prev', 'flip')}</button><button type="button" data-dstep="1" aria-label="${L.nextDay}"${current >= 9 ? ' disabled' : ''}>${ic('next', 'flip')}</button><button type="button" data-cardclose aria-label="${L.close}">${ic('x')}</button></div>
+    html = `<div class="ctl"><button type="button" data-cardclose aria-label="${L.close}">${ic('x')}</button></div>
       <div class="c"><div class="hd"><span class="dl">${esc(c.label)}</span><span class="dd">${esc(dateLabel(d.date))}</span></div>
       <h3>${esc(c.title)}</h3><p>${esc(c.text)}</p>
       <div class="ft">${c.stay ? `<span>${ic('bed')}${esc(c.stay)}</span>` : ''}${sun ? `<span class="sun" title="${L.rise} / ${L.set}">${ic('rise')}${sun.rise}<span class="sr">${L.rise}</span> ${ic('set')}${sun.set}<span class="sr">${L.set}</span></span>` : ''}${cd ? `<span class="sunin">${ic('sun')}<span>${esc(cd)}</span></span>` : ''}</div>
