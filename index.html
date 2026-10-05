@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MW Photo Tours · Expeditions</title>
 <meta name="theme-color" content="#0A0908">
-<link rel="icon" href="assets/favicon.ico" sizes="32x32"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png"><script src="assets/sync.js" defer></script>
+<link rel="icon" href="assets/favicon.ico" sizes="32x32"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&family=Montserrat:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
@@ -156,8 +156,6 @@ function render() {
   }).join('') : `<li class="empty">${esc(tours.length ? L.empty : L.loadErr)}</li>`;
   q.setAttribute('aria-activedescendant', active >= 0 ? 'o' + active : '');
 }
-// already unlocked on this device (or brought here by signing in): no code needed
-const isOpen = t => { try { return !!(t.slug && localStorage.getItem('mw-tour-' + t.slug + '-code')); } catch (e) { return false; } };
 const coarse = matchMedia('(pointer:coarse)');
 function move(d) {
   if (!shown.length) return;
@@ -196,7 +194,6 @@ list.addEventListener('click', e => { const a = e.target.closest('.opt'); if (!a
 list.addEventListener('touchstart', () => q.blur(), { passive: true });
 $('#lang').addEventListener('click', () => { lang = lang === 'he' ? 'en' : 'he'; store.set('mw-tour-lang', lang); applyLang(); });
 addEventListener('pageshow', () => { $('#go').classList.remove('on'); render(); });
-addEventListener('mw-sync', () => { lang = store.get('mw-tour-lang') === 'en' ? 'en' : 'he'; applyLang(); });   // signed in: language and unlocked tours from the account
 
 applyLang();
 fetch('tours.json', { cache: 'no-cache' }).then(r => r.json()).then(d => { tours = (d.tours || []).filter(t => t && t.path); render(); })
