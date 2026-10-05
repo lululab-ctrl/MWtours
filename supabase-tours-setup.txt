@@ -1,0 +1,69 @@
+-- =====================================================================
+-- MW Photo Tours · tours.mw.photography — Supabase setup for traveler sync
+-- Lets a traveler sign in with their email (a link, no password) so the expeditions they unlocked,
+-- their packing lists and field progress follow them to any browser or phone.
+--
+-- Uses the SAME Supabase project as the MWP site (yrjybeehfhksdhsctwbk). It adds one new table and
+-- touches nothing of the MWP site. Travelers who sign in are NOT admins: the MWP admin rights come only
+-- from the site_admins list (is_admin()), so a traveler can never edit the MWP site.
+--
+-- HOW TO RUN: Supabase → SQL Editor → New query → paste this whole file → Run.
+-- Safe to run more than once.
+-- =====================================================================
+
+-- 1. One row per traveler per expedition: what that expedition keeps on the device
+--    (its code, packing lists, field progress, opening watched). slug '_prefs' holds the language.
+create table if not exists public.tour_progress (
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  slug        text not null check (slug ~ '^[a-z0-9_][a-z0-9_-]{0,63}$'),
+  state       jsonb not null default '{}'::jsonb check (pg_column_size(state) < 65536),
+  updated_at  timestamptz not null default now(),
+  primary key (user_id, slug)
+);
+
+-- 2. Security: each traveler sees and changes only their own rows. Nobody else, not even other travelers.
+alter table public.tour_progress enable row level security;
+
+revoke all on public.tour_progress from anon, authenticated;
+grant select, insert, update, delete on public.tour_progress to authenticated;
+
+drop policy if exists "Travelers read their own progress"   on public.tour_progress;
+drop policy if exists "Travelers add their own progress"    on public.tour_progress;
+drop policy if exists "Travelers update their own progress" on public.tour_progress;
+drop policy if exists "Travelers delete their own progress" on public.tour_progress;
+
+create policy "Travelers read their own progress"
+  on public.tour_progress for select to authenticated using (user_id = auth.uid());
+create policy "Travelers add their own progress"
+  on public.tour_progress for insert to authenticated with check (user_id = auth.uid());
+create policy "Travelers update their own progress"
+  on public.tour_progress for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "Travelers delete their own progress"
+  on public.tour_progress for delete to authenticated using (user_id = auth.uid());
+
+-- =====================================================================
+-- AFTER RUNNING THE SQL, three settings in the Supabase dashboard
+-- =====================================================================
+--
+-- A. Let travelers create an account by email
+--    Authentication → Sign In / Providers → Email:
+--      • Email provider: ON
+--      • "Allow new users to sign up": ON
+--      • "Confirm email": can stay ON (the sign-in link itself confirms the address)
+--    (Safe for the MWP site: new users are never admins.)
+--
+-- B. Allow the sign-in link to come back to the tours site
+--    Authentication → URL Configuration → Redirect URLs → Add URL, add both:
+--      https://tours.mw.photography/**
+--      https://lululab-ctrl.github.io/**
+--    Leave "Site URL" as it is (the MWP site).
+--
+-- C. Sending the emails (important before real travelers use it)
+--    Supabase's built-in email sender is only for testing: it sends just a few emails per hour for the
+--    whole project. For a group of travelers, connect a real email sender:
+--    Authentication → Emails → SMTP Settings → enable custom SMTP (for example Resend, Brevo or
+--    Google Workspace), sender name "MW Photo Tours", sender address e.g. tours@mw.photography.
+--
+-- Optional: make the email look like MW Photo Tours
+--    Authentication → Emails → Templates → "Magic link": subject "Your MW Photo Tours sign-in link".
+-- =====================================================================

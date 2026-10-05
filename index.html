@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MW Photo Tours · Expeditions</title>
 <meta name="theme-color" content="#0A0908">
-<link rel="icon" href="assets/favicon.ico" sizes="32x32"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="icon" href="assets/favicon.ico" sizes="32x32"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png"><script src="assets/sync.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&family=Montserrat:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
@@ -63,6 +63,8 @@ button,input{font:inherit;color:inherit}
 .opt small{display:block;font-size:13px;color:var(--faint);font-variant-numeric:tabular-nums}
 .opt .st{font:600 10.5px/1 var(--label);letter-spacing:.14em;text-transform:uppercase;padding:6px 9px;border-radius:var(--pill);border:1px solid rgba(232,162,62,.5);color:var(--amber);white-space:nowrap}
 [dir=rtl] .opt .st{font:600 12px/1 var(--sans);letter-spacing:0}
+.opt .sts{display:grid;justify-items:end;gap:5px}
+.opt .st.open{border-color:rgba(169,196,140,.55);color:var(--leaf);background:rgba(169,196,140,.08)}
 .opt .st.now{border-color:rgba(169,196,140,.7);color:var(--leaf)}
 .opt .st.past{border-color:var(--rule);color:var(--faint)}
 .opt.past b{color:var(--muted)}
@@ -106,10 +108,10 @@ button,input{font:inherit;color:inherit}
 const UI = {
   he: { lang: 'EN', kicker: 'MW Photo Tours · מסעות צילום', title: '<span>לאיזה מסע</span> <b>אתם מצטרפים?</b>', lede: 'בחרו את המסע שלכם מהרשימה, או חפשו לפי שם, מקום או חודש.',
         ph: 'חיפוש מסע…', note: 'אחרי הבחירה תתבקשו להקליד את קוד המסע שמתן שלח לכם.', empty: 'לא נמצא מסע. נסו מילה אחרת.', loadErr: 'לא הצלחנו לטעון את רשימת המסעות. רעננו את הדף.',
-        st: { soon: 'בקרוב', now: 'עכשיו', past: 'הסתיים' }, months: ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'] },
+        st: { soon: 'בקרוב', now: 'עכשיו', past: 'הסתיים' }, open: 'פתוח', months: ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'] },
   en: { lang: 'עב', kicker: 'MW Photo Tours · Photography expeditions', title: '<span>Which expedition</span> <b>are you joining?</b>', lede: 'Choose your expedition from the list, or search by name, place or month.',
         ph: 'Search expeditions…', note: 'Next, you’ll be asked for the expedition code Matan sent you.', empty: 'No expedition found. Try another word.', loadErr: 'We couldn’t load the expeditions. Please refresh the page.',
-        st: { soon: 'Upcoming', now: 'Now', past: 'Ended' }, months: ['January','February','March','April','May','June','July','August','September','October','November','December'] },
+        st: { soon: 'Upcoming', now: 'Now', past: 'Ended' }, open: 'Unlocked', months: ['January','February','March','April','May','June','July','August','September','October','November','December'] },
 };
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 let lang = store.get('mw-tour-lang') === 'en' ? 'en' : 'he', L = UI[lang], tours = [], shown = [], active = -1;
@@ -152,10 +154,12 @@ function render() {
     return `<li><a class="opt${st === 'past' ? ' past' : ''}" id="o${i}" role="option" aria-selected="${i === active}" href="${esc(t.path)}">
       <span class="ph"${t.cover ? ` style="background-image:url('${esc(t.cover)}')"` : ''}>${t.cover ? '' : '<svg class="ic"><use href="#i-leaf"/></svg>'}</span>
       <span><b>${hl(tx(t.title), term)}</b><small>${hl(tx(t.place), term)}${t.place ? ' · ' : ''}${esc(dates(t))}</small></span>
-      <span class="st ${st}">${esc(L.st[st])}</span></a></li>`;
+      <span class="sts">${isOpen(t) ? `<span class="st open">${esc(L.open)}</span>` : ''}<span class="st ${st}">${esc(L.st[st])}</span></span></a></li>`;
   }).join('') : `<li class="empty">${esc(tours.length ? L.empty : L.loadErr)}</li>`;
   q.setAttribute('aria-activedescendant', active >= 0 ? 'o' + active : '');
 }
+// already unlocked on this device (or brought here by signing in): no code needed
+const isOpen = t => { try { return !!(t.slug && localStorage.getItem('mw-tour-' + t.slug + '-code')); } catch (e) { return false; } };
 function setOpen(on) { pick.classList.toggle('open', on); q.setAttribute('aria-expanded', on); }
 function move(d) {
   if (!shown.length) return;
@@ -191,7 +195,8 @@ $('#toggle').addEventListener('click', () => { const on = !pick.classList.contai
 list.addEventListener('click', e => { const a = e.target.closest('.opt'); if (!a) return; e.preventDefault(); go(shown[+a.id.slice(1)]); });
 document.addEventListener('pointerdown', e => { if (!pick.contains(e.target)) setOpen(false); });
 $('#lang').addEventListener('click', () => { lang = lang === 'he' ? 'en' : 'he'; store.set('mw-tour-lang', lang); applyLang(); });
-addEventListener('pageshow', () => $('#go').classList.remove('on'));
+addEventListener('pageshow', () => { $('#go').classList.remove('on'); render(); });
+addEventListener('mw-sync', () => { lang = store.get('mw-tour-lang') === 'en' ? 'en' : 'he'; applyLang(); });   // signed in: language and unlocked tours from the account
 
 applyLang();
 fetch('tours.json', { cache: 'no-cache' }).then(r => r.json()).then(d => { tours = (d.tours || []).filter(t => t && t.path); render(); })

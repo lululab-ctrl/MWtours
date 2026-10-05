@@ -1,21 +1,35 @@
 {
-  "_help": "One entry per expedition. 'path' is the tour's folder. Dates are YYYY-MM-DD. Add a new tour by copying an entry.",
+  "_help": "One entry per expedition. 'path' is the tour's folder, 'slug' the id inside its page (its \"slug\"). Dates are YYYY-MM-DD. Add a new tour by copying an entry.",
   "tours": [
     {
       "path": "manas-kaziranga/",
-      "title": { "en": "Manas & Kaziranga", "he": "מאנאס וקזירנגה" },
-      "place": { "en": "Assam, India", "he": "אסאם, הודו" },
+      "title": {
+        "en": "Manas & Kaziranga",
+        "he": "מאנאס וקזירנגה"
+      },
+      "place": {
+        "en": "Assam, India",
+        "he": "אסאם, הודו"
+      },
       "start": "2026-11-01",
       "end": "2026-11-09",
-      "cover": "manas-kaziranga/photos/kaz.jpg"
+      "cover": "manas-kaziranga/photos/kaz.jpg",
+      "slug": "assam-2026"
     },
     {
       "path": "iberian-lynx/",
-      "title": { "en": "The Iberian Lynx", "he": "השונר האיברי" },
-      "place": { "en": "Spain", "he": "ספרד" },
+      "title": {
+        "en": "The Iberian Lynx",
+        "he": "השונר האיברי"
+      },
+      "place": {
+        "en": "Spain",
+        "he": "ספרד"
+      },
       "start": "2026-11-12",
       "end": "2026-11-15",
-      "cover": "iberian-lynx/photos/lynx.jpg"
+      "cover": "iberian-lynx/photos/lynx.jpg",
+      "slug": "lynx-2026"
     }
   ]
 }
