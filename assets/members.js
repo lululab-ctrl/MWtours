@@ -314,6 +314,13 @@ document.addEventListener('click', e => {
 
 // ---------- look ----------
 const css = `
+/* the code screen: never wider than the window, and the contour lines stay behind it while it scrolls */
+#gate{overflow-x:hidden}
+#gate::before{height:var(--mw-gh,100%);bottom:auto}
+#gate{padding-block:calc(18px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-bottom))}
+#gate .gate-in{gap:11px}
+#gate .gate-in .logo{width:72px;margin-block-end:2px}
+#gate .gate-form{margin-block-start:10px;gap:10px}
 .gate-form .mw-name{width:100%;height:54px;border-radius:64px;border:1px solid rgba(254,251,241,.32);background:rgba(10,9,8,.45);text-align:center;font:600 17px/1 "Google Sans",Arial,sans-serif;letter-spacing:0;text-transform:none;color:#FEFBF1;transition:border-color .3s}
 .gate-form .mw-name::placeholder{color:rgba(254,251,241,.3);font-weight:400;letter-spacing:0;text-transform:none}
 .gate-form .mw-name:focus{outline:none;border-color:#F4AF56}
@@ -355,6 +362,9 @@ function boot() {
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   document.body.appendChild(picker);
   mountGate();
+  // the contour lines behind the code screen cover its whole height, also when it has to scroll
+  const gate = $('#gate');
+  if (gate) { const fit = () => gate.style.setProperty('--mw-gh', gate.scrollHeight + 'px'); fit(); addEventListener('resize', fit); setTimeout(fit, 800); }
   // the Field room is redrawn by the page (language, ticks): put the galleries back each time
   const field = $('#field');
   if (field) {
