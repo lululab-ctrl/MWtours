@@ -32,6 +32,8 @@ input:focus{outline:none;border-color:var(--gold)}
 input.code{font:600 16px/1 var(--label);letter-spacing:.12em;text-transform:uppercase}
 .row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
 .row.one{grid-template-columns:minmax(0,1fr) auto}
+.codebox{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.codeval{font:700 22px/1 var(--label);letter-spacing:.16em;color:var(--paper);padding:12px 18px;border-radius:14px;border:1px solid var(--rule);background:rgba(10,9,8,.35);user-select:all;-webkit-user-select:all}
 .search{position:relative}
 .search svg{position:absolute;top:50%;inset-inline-start:18px;width:20px;height:20px;margin-top:-10px;fill:none;stroke:var(--gold-soft);stroke-width:1.6;stroke-linecap:round}
 .search input{height:54px;padding-inline:50px 18px;border-radius:var(--pill)}
@@ -158,9 +160,9 @@ function render(photos) {
         <span class="pill ${ready ? 'on' : 'off'}">${ready ? 'Connected' : 'Not connected'}</span></span></div>
 
       <h3>${ready ? 'Expedition code' : 'Connect this expedition'}</h3>
-      ${ready ? `<div class="row one"><label>New code<input class="code" data-new spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026"></label>
-          <button class="btn" type="button" data-save>Change code</button></div>
-        <p class="hint">Changes at once. New travelers use the new code; those who already joined stay in.</p>`
+      ${ready ? `<div class="codebox">${d.code ? `<span class="codeval">${esc(d.code)}</span><button class="btn ghost small" type="button" data-copy="${esc(d.code)}">Copy</button>`
+            : '<span class="hint">Connected. Run the "show code" update in Supabase to see the code here.</span>'}</div>
+        <p class="hint">Travelers join with this code + their name.</p>`
       : `<div class="row one"><label>The code this expedition opens with today<input class="code" data-secret spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026" value="${esc(saved(t.slug))}"></label>
           <button class="btn" type="button" data-connect>Connect</button></div>
         ${saved(t.slug) ? '<p class="msg ok" style="margin:0">Found on this device: this browser already opened the expedition, so its code is filled in. Tap Connect.</p>' : ''}
@@ -198,16 +200,9 @@ $('#tours').addEventListener('click', async e => {
       say(msg, 'Connected.', 'ok'); await load();
     } catch (err) { btn.disabled = false; say(msg, 'Could not save: ' + (err.message || err), 'err'); }
   }
-  if (btn.matches('[data-save]')) {
-    const a = card.querySelector('[data-new]').value;
-    if (norm(a).length < 4) return say(msg, 'Use at least 4 letters or numbers.', 'err');
-    if (!confirm(`Change the code of ${t.title?.en || t.slug} to ${norm(a)}?`)) return;
-    btn.disabled = true;
-    const { error } = await sb.rpc('admin_set_tour', { p_slug: t.slug, p_title: null, p_secret: null, p_code: a });
-    btn.disabled = false;
-    if (error) return say(msg, 'Could not save: ' + error.message, 'err');
-    card.querySelector('[data-new]').value = '';
-    say(msg, `Done. The code is now ${norm(a)}.`, 'ok');
+  if (btn.matches('[data-copy]')) {
+    try { await navigator.clipboard.writeText(btn.dataset.copy); btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); } catch (e) {}
+    return;
   }
   if (btn.matches('[data-rm]')) {
     if (!confirm(`Remove ${btn.dataset.name} from this expedition? Their progress and photos go too.`)) return;

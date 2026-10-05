@@ -1,0 +1,21 @@
+-- =====================================================================
+-- MW Photo Tours · update: show each expedition's code on the admin page (read only)
+-- Supabase → SQL Editor → New query → paste this whole file → Run. Safe to run more than once.
+-- =====================================================================
+
+create or replace function public.admin_overview() returns json
+language plpgsql stable security definer set search_path = public, extensions as $$
+begin
+  if not public.is_tour_admin() then raise exception 'not_admin'; end if;
+  return coalesce((
+    select json_agg(json_build_object(
+      'slug', t.slug, 'title', t.title, 'ready', t.join_code_hash is not null and t.content_secret is not null, 'updated_at', t.updated_at,
+      'code', case when t.join_code_hash is not null and extensions.crypt(t.content_secret, t.join_code_hash) = t.join_code_hash then t.content_secret end,
+      'members', coalesce((select json_agg(json_build_object(
+          'id', m.id, 'name', m.name, 'joined', m.created_at, 'last_seen', m.last_seen, 'visits', m.visits,
+          'photos', (select count(*) from public.photos p where p.member_id = m.id)) order by m.last_seen desc)
+        from public.members m where m.tour_slug = t.slug), '[]'::json)
+    ) order by t.slug) from public.tours t), '[]'::json);
+end $$;
+
+grant execute on function public.admin_overview() to authenticated;
