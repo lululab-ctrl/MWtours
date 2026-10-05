@@ -152,7 +152,7 @@ function render() {
     return `<li><a class="opt${st === 'past' ? ' past' : ''}" id="o${i}" role="option" aria-selected="${i === active}" href="${esc(t.path)}">
       <span class="ph"${t.cover ? ` style="background-image:url('${esc(t.cover)}')"` : ''}>${t.cover ? '' : '<svg class="ic"><use href="#i-leaf"/></svg>'}</span>
       <span><b>${hl(tx(t.title), term)}</b><small>${hl(tx(t.place), term)}${t.place ? ' · ' : ''}${esc(dates(t))}</small></span>
-      <span class="sts">${isOpen(t) ? `<span class="st open">${esc(L.open)}</span>` : ''}<span class="st ${st}">${esc(L.st[st])}</span></span></a></li>`;
+      <span class="sts"><span class="st ${st}">${esc(L.st[st])}</span></span></a></li>`;
   }).join('') : `<li class="empty">${esc(tours.length ? L.empty : L.loadErr)}</li>`;
   q.setAttribute('aria-activedescendant', active >= 0 ? 'o' + active : '');
 }
