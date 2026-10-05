@@ -95,6 +95,10 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 #gate.leave{animation:gateOut .9s var(--ease) forwards}
 @keyframes gateOut{to{opacity:0;transform:scale(1.04);visibility:hidden}}
 .lang{position:absolute;top:calc(12px + env(safe-area-inset-top));inset-inline-end:12px;z-index:2}
+.outbtn{width:36px;height:36px;flex:none;padding:0;border-radius:50%;border:1px solid var(--rule);background:rgba(10,9,8,.35);color:var(--paper);display:grid;place-items:center;cursor:pointer;transition:border-color .3s}
+.outbtn:hover{border-color:rgba(254,251,241,.5)}
+.outbtn .ic{width:17px;height:17px}
+[dir=rtl] .outbtn .ic{transform:scaleX(-1)}
 .langbtn{min-width:44px;height:36px;padding-inline:12px;border-radius:var(--pill);border:1px solid var(--rule);background:rgba(10,9,8,.35);color:var(--paper);font:600 12px/1 var(--label);letter-spacing:.12em;cursor:pointer}
 
 /* ---------- shell ---------- */
@@ -248,6 +252,11 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .mfilter button .ic{width:15px;height:15px;color:var(--k,var(--gold-soft))}
 .mfilter button[aria-pressed=true]{border-color:var(--k,var(--gold-soft));color:var(--paper);background:rgba(10,9,8,.86)}
 .mfilter button em{font-style:normal}
+/* a quiet top row on every screen: only the chosen filter shows its name; the rest are small icons (name on hover) */
+.mfilter button{height:36px;padding-inline:12px;font-size:13px}
+.mfilter button span{display:none}
+.mfilter button:not([aria-pressed=true]){width:36px;padding:0;justify-content:center}
+.mfilter button:not([aria-pressed=true]) em{display:none}
 .mfilter button span{font-variant-numeric:tabular-nums;opacity:.6;font-size:12px}
 
 /* the foot of the map: a slim day timeline, and one small card above it */
@@ -626,12 +635,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
   .toast{bottom:28px}
 }
 @media (max-width:759px){
-  /* phones: a quiet top row. Only the chosen filter shows its name; the rest are small icons. */
   .mfilter{inset-inline-end:58px;gap:6px}
-  .mfilter button{height:36px;padding-inline:12px;font-size:13px}
-  .mfilter button span{display:none}
-  .mfilter button:not([aria-pressed=true]){width:36px;padding:0;justify-content:center}
-  .mfilter button:not([aria-pressed=true]) em{display:none}
   .mapctl{gap:6px}
   .mapctl .icbtn{width:38px;height:38px}
   .mapctl .icbtn .ic{width:18px;height:18px}
@@ -681,6 +685,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.2 3.5 8.5s-1.1 6.1-3.5 8.5c-2.4-2.4-3.5-5.2-3.5-8.5S9.6 5.9 12 3.5z"/></symbol>
   <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4.5h3.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14M10 8l-4 4 4 4M6 12h9.5"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="m6.5 6.5 11 11m0-11-11 11"/></symbol>
   <symbol id="i-next" viewBox="0 0 24 24"><path d="m9.5 5.5 6.5 6.5-6.5 6.5"/></symbol>
   <symbol id="i-prev" viewBox="0 0 24 24"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></symbol>
@@ -722,6 +727,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
       <div class="end">
         <button class="chip" id="chip" type="button" hidden><svg class="ic"><use href="#i-plane"/></svg><span></span></button>
         <button class="langbtn" type="button" data-lang-toggle></button>
+        <button class="outbtn" type="button" id="logout"><svg class="ic"><use href="#i-logout"/></svg></button>
       </div>
     </header>
 
@@ -822,7 +828,7 @@ const AREA = { kaz: 'var(--leaf)', ghy: 'var(--fog)', man: 'var(--amber)' };
 const UI = {
   he: {
     langBtn: 'EN', langLabel: 'Switch to English',
-    gateLabel: 'קוד המסע', gateBtn: 'כניסה', gateBusy: 'פותחים…', gateNote: 'את הקוד שולח לכם מתן.', allTours: '› לכל המסעות',
+    gateLabel: 'קוד המסע', gateBtn: 'כניסה', gateBusy: 'פותחים…', gateNote: 'את הקוד שולח לכם מתן.', allTours: '› לכל המסעות', logout: 'יציאה ובחירת מסע אחר',
     gateErr: 'הקוד לא תואם. בדקו אותו בהודעה ונסו שוב.', gateEmpty: 'הקלידו את קוד המסע.',
     tabs: { route: 'מסלול', stories: 'סיפורים', field: 'בשטח', info: 'חשוב לדעת', leader: 'המדריך' },
     play: 'הפעלת המסלול', pause: 'עצירה', all: 'כל הדרך', assam: 'מבט על אסאם', opening: 'צפייה בפתיחה', skip: 'דלגו',
@@ -855,7 +861,7 @@ const UI = {
   },
   en: {
     langBtn: 'עב', langLabel: 'עברית',
-    gateLabel: 'Expedition code', gateBtn: 'Enter', gateBusy: 'Opening…', gateNote: 'Matan sends you the code.', allTours: '‹ All expeditions',
+    gateLabel: 'Expedition code', gateBtn: 'Enter', gateBusy: 'Opening…', gateNote: 'Matan sends you the code.', allTours: '‹ All expeditions', logout: 'Log out and choose another expedition',
     gateErr: "That code doesn't match. Check it in the message and try again.", gateEmpty: 'Type in your expedition code.',
     tabs: { route: 'Route', stories: 'Stories', field: 'Field', info: 'Essentials', leader: 'Leader' },
     play: 'Play the route', pause: 'Pause', all: 'The whole way', assam: 'Assam overview', opening: 'Watch the opening', skip: 'Skip',
@@ -902,6 +908,7 @@ function applyLang() {
   $('#app').dir = root.dir;
   $$('[data-lang-toggle]').forEach(b => { b.textContent = L.langBtn; b.setAttribute('aria-label', L.langLabel); });
   $$('[data-ui]').forEach(el => { el.textContent = L[el.dataset.ui]; });
+  { const o = $('#logout'); if (o) { o.setAttribute('aria-label', L.logout); o.title = L.logout; } }
   const title = VAULT.pub.title[lang];
   $$('[data-pub="title"]').forEach(el => { el.innerHTML = `<span>${esc(title.a)}</span> <b>${esc(title.b)}</b>`; });
   $$('[data-pub="kicker"]').forEach(el => { el.textContent = VAULT.pub.kicker[lang]; });
@@ -940,6 +947,12 @@ async function tryCode(code, quiet) {
   open(quiet);
   return true;
 }
+// log out: forget this expedition's code on this device and go back to the list of expeditions
+$('#logout').addEventListener('click', () => {
+  try { localStorage.removeItem(KEY + '-code'); } catch (e) {}
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  location.href = '../';
+});
 $('#gate-form').addEventListener('submit', e => { e.preventDefault(); tryCode($('#code').value); });
 
 // ---------- map: Web Mercator in zoom-8 pixels, measured from the tour's origin ----------
