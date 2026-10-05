@@ -123,7 +123,7 @@ $('#f').addEventListener('submit', async e => {
     const a = $('#dl'); if (a.href) URL.revokeObjectURL(a.href);
     a.href = URL.createObjectURL(new Blob([out], { type: 'text/html' }));
     $('#folder').textContent = t.path;
-    const gh = location.hostname.endsWith('.github.io') ? { owner: location.hostname.split('.')[0], repo: location.pathname.split('/').filter(Boolean)[0] } : null;
+    const gh = location.hostname.endsWith('.github.io') ? { owner: location.hostname.split('.')[0], repo: location.pathname.split('/').filter(Boolean)[0] } : { owner: 'lululab-ctrl', repo: 'Manas-Kaziranga' };   // the custom domain (tours.mw.photography) serves this repo
     $('#uplink').innerHTML = gh && gh.repo ? ` (<a href="https://github.com/${gh.owner}/${gh.repo}/upload/main/${t.path}" target="_blank" rel="noopener" style="color:var(--gold-soft)">open it directly</a>)` : '';
     $('#done').hidden = false; $('#done').scrollIntoView({ behavior: 'smooth', block: 'start' });
     say('Done. The new version is locked with the new code and was checked.', 'ok');
