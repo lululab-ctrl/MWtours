@@ -176,7 +176,7 @@ async function resume() {
   try {
     await timeout(session(), 9000);
     const r = await timeout(rpc('resume_tour', { p_slug: SLUG }), 9000);
-    if (!r) { if (member) { member = null; ls.set(ME, 'null'); } return; }
+    if (!r) { if (member) { member = null; ls.set(ME, 'null'); } decorate(true); return; }
     member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member));
     const changed = applyState(r.state);
     const codeNow = norm(ls.get(KEY + '-code')), key = norm(r.secret);
@@ -184,7 +184,7 @@ async function resume() {
     if (changed) return reopen();
     save();
     decorate(); loadPhotos();
-  } catch (e) { /* offline: the page carries on with what this device has */ }
+  } catch (e) { decorate(false); /* offline: the page carries on with what this device has */ }
 }
 
 // ---------- group photos on the Field cards ----------
@@ -408,7 +408,8 @@ function boot() {
   const field = $('#field');
   if (field) {
     new MutationObserver(() => { clearTimeout(decoT); decoT = setTimeout(() => decorate(false), 60); }).observe(field, { childList: true, subtree: true });
-    new MutationObserver(() => { if (!field.hidden) loadPhotos(); }).observe(field, { attributes: true, attributeFilter: ['hidden'] });
+    new MutationObserver(() => { if (!field.hidden) { decorate(false); loadPhotos(); } }).observe(field, { attributes: true, attributeFilter: ['hidden'] });
+    decorate(false); setTimeout(() => decorate(false), 1500);
   }
   new MutationObserver(relabel).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   resume();
