@@ -109,6 +109,15 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .top .name{min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip{display:inline-flex;align-items:center;gap:6px;height:32px;background:none;cursor:pointer;font-family:inherit;padding-inline:10px;border-radius:var(--pill);border:1px solid rgba(232,162,62,.45);color:var(--paper);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .chip .ic{width:14px;height:14px;color:var(--amber)}
+.backbtn{position:fixed;z-index:26;top:calc(var(--top) + env(safe-area-inset-top) + 20px);inset-inline-start:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:inline-flex;align-items:center;gap:4px;height:36px;padding-inline:8px 14px;border-radius:var(--pill);border:1px solid rgba(244,175,86,.55);background:rgba(10,9,8,.72);color:var(--paper);font:700 14px/1 var(--sans);cursor:pointer;white-space:nowrap;height:40px;transition:background-color .3s,transform .3s var(--ease)}
+.backbtn{width:44px;height:44px!important;padding:0!important;justify-content:center;border-radius:50%}
+.backbtn span{display:none}
+.backbtn .ic{width:22px!important;height:22px!important}
+.back-on-map .mfilter{inset-inline-start:66px}
+.backbtn:hover{background:rgba(30,24,18,.86)}
+.backbtn:active{transform:scale(.96)}
+.backbtn .ic{width:18px;height:18px;color:var(--gold)}
+[dir=rtl] .backbtn .ic{transform:scaleX(-1)}
 .top .end{margin-inline-start:auto;display:flex;align-items:center;gap:8px}
 .tabs{position:fixed;inset-inline:0;bottom:0;z-index:30;height:calc(var(--bar) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(5,1fr);
   background:rgba(10,9,8,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--rule);transition:transform .8s var(--ease)}
@@ -189,7 +198,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 [dir=rtl] .lab.city>span,[dir=rtl] .lab.river>span,[dir=rtl] .lab.region>span,[dir=rtl] .lab.sea>span{font-size:12px;letter-spacing:.03em}
 .dot{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--paper);box-shadow:0 0 0 3px rgba(10,9,8,.65)}
 .dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px solid var(--paper);opacity:0}
-.ping .dot::after{animation:ripple 1.6s var(--ease) 2}
+.ping .dot::after{animation:ripple 2.2s var(--ease) 1}
 @keyframes ripple{0%{transform:scale(1);opacity:.9}100%{transform:scale(4.2);opacity:0}}
 .mk .tag{position:absolute;left:0;top:0;transform:translate(12px,-50%);display:inline-flex;align-items:center;gap:7px;height:28px;padding-inline:10px;border-radius:var(--pill);background:rgba(10,9,8,.82);border:1px solid var(--rule);white-space:nowrap;font-size:12.5px;font-weight:700;color:var(--paper);cursor:pointer;transition:border-color .3s,background-color .3s}
 .mk .tag:hover,.mk.sel .tag{border-color:rgba(232,162,62,.8);background:rgba(10,9,8,.94)}
@@ -257,6 +266,16 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .timeline::-webkit-scrollbar{display:none}
 .tl-play{flex:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--gold);background:rgba(244,175,86,.08);color:var(--gold);display:grid;place-items:center;cursor:pointer;margin-inline-end:4px;transition:background-color .3s,transform .3s var(--spring)}
 .tl-play:hover{background:rgba(244,175,86,.18)}
+/* previous / next sit at the two ends of the timeline; the days scroll between them */
+.timeline{overflow:hidden}
+.tl-days{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
+.tl-days::-webkit-scrollbar{display:none}
+.tl-days{-webkit-mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);padding-inline:6px}
+.tl-nav{flex:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--gold);background:rgba(244,175,86,.08);color:var(--gold);display:grid;place-items:center;cursor:pointer;padding:0;transition:background-color .3s,opacity .3s}
+.tl-nav:hover:not(:disabled){background:rgba(244,175,86,.18)}
+.tl-nav:disabled{opacity:.3;cursor:default}
+.tl-nav .ic{width:18px;height:18px}
+[dir=rtl] .tl-nav .flip{transform:scaleX(-1)}
 .tl-day{position:relative;flex:none;min-width:44px;height:42px;padding-inline:6px;border-radius:var(--pill);border:0;background:none;color:var(--muted);display:grid;align-content:center;justify-items:center;gap:2px;cursor:pointer;transition:background-color .3s,color .3s}
 .tl-day b{font:700 14px/1 var(--label);letter-spacing:.04em;font-variant-numeric:tabular-nums}
 .tl-day small{font-size:10.5px;line-height:1;color:var(--faint);font-variant-numeric:tabular-nums}
@@ -269,11 +288,17 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .tl-day.today{box-shadow:inset 0 0 0 1.5px var(--leaf)}
 .tl-day.today::before{content:"";position:absolute;top:-3px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--leaf);box-shadow:0 0 0 2px rgba(10,9,8,.8)}
 .daycard{position:relative;width:min(440px,100%);max-height:min(46vh,420px);overflow-y:auto;overscroll-behavior:contain;padding:16px 18px 16px;border-radius:20px;background:var(--glass);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid var(--rule);box-shadow:0 18px 50px rgba(0,0,0,.4);display:grid;gap:8px;touch-action:pan-y}
+/* see-through: the map stays visible behind the card and the timeline, softly blurred so the text still reads */
+.daycard,.timeline{background:linear-gradient(180deg,rgba(10,9,8,.34),rgba(10,9,8,.5));-webkit-backdrop-filter:blur(7px) saturate(1.25);backdrop-filter:blur(7px) saturate(1.25);border-color:rgba(254,251,241,.18)}
+.daycard{box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.daycard h3,.daycard p,.daycard .ft,.daycard .dd,.daycard .dl,.daycard .more,.tl-day{text-shadow:0 1px 3px rgba(0,0,0,.65)}
+.daycard .pill{background:rgba(10,9,8,.32)}
+.daycard .ctl button{background:rgba(10,9,8,.3)}
 .daycard.in{animation:cardIn .55s var(--ease)}
 .daycard.swap>.c{animation:rise .45s var(--ease)}
 @keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 .daycard .c{display:grid;gap:8px}
-.daycard .hd{display:flex;align-items:center;gap:10px;padding-inline-end:124px;min-height:24px}
+.daycard .hd{display:flex;align-items:center;gap:10px;padding-inline-end:44px;min-height:24px}
 .daycard.intro .lbl{padding-inline-end:40px}
 .daycard .dl{font:700 11px/1 var(--label);letter-spacing:.2em;text-transform:uppercase;color:var(--amber)}
 [dir=rtl] .daycard .dl{font:700 14px/1 var(--sans);letter-spacing:0}
@@ -490,6 +515,8 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .hero>figure{position:absolute;inset:0;margin:0;z-index:-1;background:#14120F}
 .hero>figure img{display:block;width:100%;height:100%;object-fit:cover;animation:kb 20s ease-out forwards}
 .hero>figure::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,8,.6) 0,rgba(10,9,8,.08) 26%,rgba(10,9,8,.3) 58%,var(--night) 100%)}
+/* keep the title clear of the top bar and the floating back button */
+.hero{padding-top:calc(var(--top) + env(safe-area-inset-top) + 76px)}
 .hero .in{width:100%;max-width:1080px;margin-inline:auto;padding:0 16px 4px;display:grid;gap:12px}
 .hero .tt{font-size:clamp(42px,10vw,84px)}
 .hero .lede{color:rgba(254,251,241,.86)}
@@ -547,6 +574,10 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .clock{display:grid;gap:2px;padding:16px 18px;border-radius:18px;background:rgba(254,251,241,.04);border:1px solid var(--rule)}
 .clock span{font-size:13px;color:var(--faint)}
 .clock b{font:600 30px/1.1 var(--label);color:var(--paper);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .mfilter{inset-inline-end:58px;gap:6px}
+  .mapctl{gap:6px}
+  .mapctl .icbtn{width:38px;height:38px}
+  .mapctl .icbtn .ic{width:18px;height:18px}
 .clock small{font-size:12.5px;color:var(--gold-soft)}
 .dlist{display:grid;gap:8px}
 .drow{display:grid;grid-template-columns:56px minmax(0,1fr) 20px;gap:14px;align-items:center;width:100%;padding:12px 14px;border-radius:16px;background:rgba(254,251,241,.04);border:1px solid var(--rule);color:inherit;font:inherit;text-align:start;cursor:pointer;transition:border-color .3s,background-color .3s,transform .35s var(--spring)}
@@ -560,7 +591,30 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .drow .p{display:-webkit-box;margin-top:3px;font-size:13.5px;line-height:1.5;color:var(--muted);-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .drow .ic{width:16px;height:16px;color:var(--faint)}
 [dir=rtl] .drow .ic{transform:scaleX(-1)}
-.drow.today{border-color:rgba(169,196,140,.7)}
+.dday.today .drow{border-color:rgba(169,196,140,.7)}
+.dday{display:grid}
+.drow .ic{transition:transform .35s var(--ease)}
+.dday.open .drow{border-color:rgba(232,162,62,.5);border-end-start-radius:0;border-end-end-radius:0;background:rgba(254,251,241,.07)}
+.dday.open .drow .ic{transform:rotate(90deg)}
+.dday.open .drow .p{display:none}
+.dpanel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s var(--ease)}
+.dday.open .dpanel{grid-template-rows:1fr}
+.dpin{overflow:hidden;min-height:0}
+.dday.open .dpin{padding:4px 16px 16px;border:1px solid rgba(232,162,62,.5);border-top:0;border-radius:0 0 16px 16px;background:rgba(254,251,241,.035)}
+.dpin{display:grid;gap:12px}
+.dpin .full{margin:8px 0 0;font-size:15px;line-height:1.6;color:var(--muted)}
+.dpin .rows{display:grid}
+.sched{list-style:none;margin:10px 0 2px;padding:0;display:grid;position:relative}
+.sched::before{content:"";position:absolute;inset-block:18px 30px;inset-inline-start:27px;width:1px;background:rgba(232,162,62,.35)}
+.sched li{position:relative;display:grid;grid-template-columns:56px minmax(0,1fr);gap:14px;align-items:baseline;padding-block:8px;font-size:15px;line-height:1.5;color:var(--paper)}
+.sched .tm{position:relative;z-index:1;justify-self:center;padding:3px 7px;border-radius:8px;background:#13241f;border:1px solid rgba(232,162,62,.55);font:700 13px/1 var(--label);color:var(--amber);font-variant-numeric:tabular-nums;direction:ltr}
+.sched .tm i{display:block;width:6px;height:6px;border-radius:50%;background:var(--gold-soft)}
+.sched .tm:has(i){width:14px;height:14px;padding:0;display:grid;place-items:center;border-radius:50%;align-self:start;margin-top:5px}
+.dpin .row{display:grid;grid-template-columns:118px minmax(0,1fr);gap:14px;padding-block:9px;border-bottom:1px solid var(--rule);font-size:14.5px}
+.dpin .row:last-child{border-bottom:0}
+.dpin .row b{color:var(--gold-soft);font-weight:600}
+.dpin .row span{color:var(--paper)}
+.dpin .btn{justify-self:start}
 .ess{padding:20px;border-radius:20px;background:rgba(254,251,241,.035);border:1px solid var(--rule)}
 .egrid{gap:14px}
 .phr{display:grid}
@@ -599,7 +653,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
   .mapctl .icbtn{width:38px;height:38px}
   .mapctl .icbtn .ic{width:18px;height:18px}
   /* phones: the photo whole on top, the words below it over its faded foot */
-  .hero{display:block;min-height:0;background:var(--night)}
+  .hero{display:block;min-height:0;background:var(--night);padding-top:0}
   .hero>figure{position:relative;inset:auto;aspect-ratio:1/1;max-height:62vh;margin-bottom:-84px;overflow:hidden}
   .hero .in{position:relative}
   #pop{left:10px!important;right:10px;top:auto!important;bottom:calc(var(--bar) + env(safe-area-inset-bottom) + 10px);width:auto;max-height:min(68vh,580px)}
@@ -679,10 +733,12 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
       </form>
       <p class="gate-note" data-ui="gateNote" style="--i:5"></p>
       <a class="gate-all" href="../" data-ui="allTours" style="--i:6"></a>
+      <a class="gate-all" href="../" data-ui="allTours" style="--i:6"></a>
     </div>
   </section>
 
   <div id="shell" hidden>
+    <button class="backbtn" id="back" type="button" hidden><svg class="ic"><use href="#i-prev"/></svg><span></span></button>
     <header class="top">
       <span class="mark" role="img" aria-label="MW Photo Tours"></span>
       <span class="name" id="top-name"></span>
@@ -706,7 +762,6 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
         </div>
         <div class="mfilter" id="mfilter" role="group"></div>
         <div class="mapctl">
-          <button class="icbtn" type="button" id="ctl-opening"><svg class="ic"><use href="#i-film"/></svg></button>
           <button class="icbtn" type="button" id="ctl-all"><svg class="ic"><use href="#i-globe"/></svg></button>
           <button class="icbtn" type="button" id="ctl-assam"><svg class="ic"><use href="#i-target"/></svg></button>
         </div>
@@ -799,7 +854,8 @@ const UI = {
     play: 'הפעלת המסלול', pause: 'עצירה', all: 'כל הדרך', regionView: n => `מבט על ${n}`, opening: 'צפייה בפתיחה', skip: 'דלגו',
     toGo: n => n === 1 ? 'מחר ממריאים' : `עוד ${n} ימים להמראה`, hoursToGo: n => `עוד ${n} שעות להמראה`,
     toStart: n => n === 1 ? 'מחר יוצאים לדרך' : `עוד ${n} ימים למסע`, hoursToStart: n => `עוד ${n} שעות למסע`,
-    chip: n => n === 1 ? 'מחר' : `עוד ${n} ימים`, chipHours: n => `עוד ${n} שעות`,
+    chip: n => n === 1 ? 'טסים מחר' : `טסים בעוד ${n} ימים`, chipHours: n => `טסים בעוד ${n} שעות`,
+    back: 'חזרה', chipStart: n => n === 1 ? 'מתחילים מחר' : `מתחילים בעוד ${n} ימים`, chipStartHours: n => `מתחילים בעוד ${n} שעות`,
     during: n => n === 0 ? 'היום יוצאים לדרך' : `היום: יום ${pad2(n)} מתוך ${pad2(D1())}`, chipDuring: n => n === 0 ? 'יוצאים' : `יום ${pad2(n)}`,
     after: 'המסע הסתיים. תודה שהייתם איתנו.',
     weekday: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
@@ -816,6 +872,7 @@ const UI = {
       install: { title: 'שמרו את המסע בטלפון', text: ['באייפון: כפתור השיתוף, ואז "הוספה למסך הבית".', 'באנדרואיד: התפריט, ואז "התקנת אפליקציה".', 'אחרי הפתיחה הראשונה העמוד עובד גם בלי קליטה.'] },
       calTitle: 'מסע צילום', calDep: 'יציאה מנתב"ג' },
     l: { kicker: 'המדריך שלכם', contact: 'דברו איתי', wa: 'וואטסאפ למתן', waText: 'היי מתן, לגבי המסע', phone: 'טלפון', mail: 'מייל', copy: 'העתקה', copied: 'הועתק', ig: 'אינסטגרם' },
+    sched: { date: 'תאריך', stay: 'לינה', sun: 'זריחה / שקיעה', look: 'מה לחפש', ex: 'תרגיל צילום', map: 'להראות במפה' },
     lookFor: 'לחפש היום', exercise: 'תרגיל היום', packed: (a, b) => `הרשימות שלי: ${a}/${b}`, readOf: (a, b) => `${a} מתוך ${b} סיפורים נקראו`,
     readMore: 'להמשך', less: 'לקצר', read: 'נקרא', today: 'היום',
     sunIn: (k, h, m) => `${k === 'rise' ? 'זריחה' : 'שקיעה'} ${h ? `בעוד ${h}:${pad2(m)} שעות` : `בעוד ${m} דקות`}`,
@@ -830,7 +887,8 @@ const UI = {
     play: 'Play the route', pause: 'Pause', all: 'The whole way', regionView: n => `${n} overview`, opening: 'Watch the opening', skip: 'Skip',
     toGo: n => n === 1 ? 'We fly tomorrow' : `${n} days to take-off`, hoursToGo: n => `${n} hours to take-off`,
     toStart: n => n === 1 ? 'We set off tomorrow' : `${n} days to go`, hoursToStart: n => `${n} hours to go`,
-    chip: n => n === 1 ? 'Tomorrow' : `${n} days`, chipHours: n => `${n} hours`,
+    chip: n => n === 1 ? 'Flying tomorrow' : `Flying in ${n} days`, chipHours: n => `Flying in ${n} hours`,
+    back: 'Back', chipStart: n => n === 1 ? 'Starts tomorrow' : `Starts in ${n} days`, chipStartHours: n => `Starts in ${n} hours`,
     during: n => n === 0 ? 'Today we set off' : `Today: day ${pad2(n)} of ${pad2(D1())}`, chipDuring: n => n === 0 ? 'Departing' : `Day ${pad2(n)}`,
     after: 'The expedition is over. Thank you for coming with us.',
     weekday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -847,6 +905,7 @@ const UI = {
       install: { title: 'Keep it on your phone', text: ['iPhone: the Share button, then "Add to Home Screen".', 'Android: the menu, then "Install app".', 'After the first visit the page works without signal too.'] },
       calTitle: 'Photo expedition', calDep: 'Departure from Ben Gurion' },
     l: { kicker: 'Your leader', contact: 'Get in touch', wa: 'WhatsApp Matan', waText: 'Hi Matan, about the expedition', phone: 'Phone', mail: 'Email', copy: 'Copy', copied: 'Copied', ig: 'Instagram' },
+    sched: { date: 'Date', stay: 'Overnight', sun: 'Sunrise / sunset', look: 'Look for', ex: 'Photo exercise', map: 'Show on map' },
     lookFor: 'Look for today', exercise: "Today's exercise", packed: (a, b) => `My lists: ${a}/${b}`, readOf: (a, b) => `${a} of ${b} stories read`,
     readMore: 'Read more', less: 'Less', read: 'Read', today: 'Today',
     sunIn: (k, h, m) => `${k === 'rise' ? 'Sunrise' : 'Sunset'} in ${h ? `${h}h ${pad2(m)}m` : `${m} min`}`,
@@ -871,12 +930,13 @@ function applyLang() {
   $$('[data-lang-toggle]').forEach(b => { b.textContent = L.langBtn; b.setAttribute('aria-label', L.langLabel); });
   $$('[data-ui]').forEach(el => { el.textContent = L[el.dataset.ui]; });
   { const o = $('#logout'); if (o) { o.setAttribute('aria-label', L.logout); o.title = L.logout; } }
+  { const o = $('#logout'); if (o) { o.setAttribute('aria-label', L.logout); o.title = L.logout; } }
   const title = VAULT.pub.title[lang];
   $$('[data-pub="title"]').forEach(el => { el.innerHTML = `<span>${esc(title.a)}</span> <b>${esc(title.b)}</b>`; });
   $$('[data-pub="kicker"]').forEach(el => { el.textContent = VAULT.pub.kicker[lang]; });
   $$('[data-pub="dates"]').forEach(el => { el.textContent = VAULT.pub.dates[lang]; });
   document.title = `${title.a} ${title.b}`;
-  if (T) renderAll();
+  if (T) { renderAll(); renderBack(); }
 }
 $$('[data-lang-toggle]').forEach(b => b.addEventListener('click', () => {
   lang = lang === 'he' ? 'en' : 'he'; store.set('mw-tour-lang', lang); applyLang();
@@ -1113,7 +1173,7 @@ function setView(v) {
 
 // smooth zoom-and-pan (van Wijk and Nuij, as in d3.interpolateZoom)
 function zoomPath(p0, p1) {
-  const rho = Math.SQRT2, r2 = 2, r4 = 4;
+  const rho = 1, r2 = 1, r4 = 1;   // calmer than d3's √2: the camera glides rather than leaping out and back in
   const [ux0, uy0, w0] = p0, [ux1, uy1, w1] = p1, dx = ux1 - ux0, dy = uy1 - uy0, d2 = dx * dx + dy * dy;
   let f, S;
   if (d2 < 1e-9) { S = Math.log(w1 / w0) / rho; f = t => [ux0 + t * dx, uy0 + t * dy, w0 * Math.exp(rho * t * S)]; }
@@ -1132,7 +1192,7 @@ function fly(target, opts = {}) {
   const id = ++anim;
   if (reduce) { setView(target); return { dur: 0, done: Promise.resolve(true) }; }
   const f = zoomPath([view.x, view.y, W / view.s], [target.x, target.y, W / target.s]);
-  const D = opts.dur || clamp(f.duration * (opts.slow || 0.9), 650, opts.max || 3400);
+  const D = opts.dur || clamp(f.duration * (opts.slow || 1.5), 1100, opts.max || 3800);
   const t0 = performance.now();
   const done = new Promise(res => {
     const step = now => {
@@ -1149,7 +1209,7 @@ function drawLegs(ids, tok, dur) {
   return new Promise(res => {
     if (!ids.length) return res();
     const lens = ids.map(id => legs[id].cum.at(-1)), total = lens.reduce((a, b) => a + b, 0);
-    const D = dur || clamp(900 + ids.length * 700, 1200, 2600), t0 = performance.now();
+    const D = dur || clamp(1400 + ids.length * 1000, 2000, 4000), t0 = performance.now();
     const arrived = new Set();
     const step = now => {
       if (tok !== seq) { veh.x = NaN; placeOverlay(); return res(); }
@@ -1199,16 +1259,16 @@ async function goDay(n, animate = true) {
   else if (n === 1) { atmos({ night: 0, dawn: 0.38, stars: 0 }, 1400); setTimeout(() => tok === seq && atmos({ dawn: 0 }, 2600), 2600); }
   else atmos({ night: 0, dawn: 0, stars: 0 }, 1000);
   await wait(30);   // let the card settle before measuring the clear area
-  if (animate && !reduce && legsOf(day).length) tiltTo(26, 1200);
+  if (tilt) tiltTo(0, 800);   // day changes stay flat: no camera lean
   for (const st of day.steps) {
     const target = fit(st.bbox), ids = st.legs || [];
     if (!animate || reduce) { anim++; setView(target); ids.forEach(id => setLeg(id, 1)); continue; }
     const f = fly(target);
-    await Promise.all([f.done, ids.length ? wait(f.dur * 0.45).then(() => tok === seq && drawLegs(ids, tok)) : null]);
+    if (!await f.done || tok !== seq) return;
+    if (ids.length) { await wait(250); if (tok !== seq) return; await drawLegs(ids, tok); }
     if (tok !== seq) return;
   }
   settleLegs(n, true);
-  tiltTo(0, 1400);
 }
 function markStops() {
   const day = T.days.find(d => d.n === current);
@@ -1588,10 +1648,10 @@ async function journey() {
   $('#jcap').className = 'jc';
   jt.className = 'jt';
   jt.innerHTML = `<span class="logo" style="--i:0"></span><p class="lbl" style="--i:1">${esc(T.tagline[lang])}</p><h2 class="tt" style="--i:2"><span>${esc(title.a)}</span> <b>${esc(title.b)}</b></h2><p class="dates" style="--i:3">${esc(T.dates[lang])}</p>`;
-  bar.classList.remove('go'); bar.style.setProperty('--jd', (O.ms || 18500) + 'ms'); void bar.offsetWidth; bar.classList.add('go');
+  bar.classList.remove('go'); bar.style.setProperty('--jd', Math.round((O.ms || 18500) * 1.45) + 'ms'); void bar.offsetWidth; bar.classList.add('go');
   for (const id in legs) setLeg(id, 0);
   atmos({ night: 0.86, dawn: 0, stars: 1 }, 0);
-  tiltTo(44, 0);
+  tiltTo(18, 0);
   mapEl.classList.add('titling');
   setView(fit(O.from));
   fly(fit(O.to), { dur: 2600, ease: easeSine });
@@ -1602,18 +1662,18 @@ async function journey() {
   for (const st of O.steps) {
     if (st.atm) atmos(st.atm, st.atmMs || 1500);
     if (st.cap != null) cap(J[st.cap]);
-    if (st.tilt != null) tiltTo(st.tilt, st.tiltMs || 1600);
+    if (st.tilt != null) tiltTo(Math.min(st.tilt, 14), Math.max(st.tiltMs || 1600, 2000));   // a gentle lean only
     if (st.set) st.set.forEach(id => setLeg(id, 1));
     const ids = st.legs || [];
     if (st.bbox || st.region) {
       if (st.region) journeyOn = false;   // fit the overview with the ordinary margins
       const t = fit(st.region ? regionView() : st.bbox);
       journeyOn = true;
-      const f = fly(t, st.dur ? { dur: st.dur } : { slow: 1, max: 1900 });
-      await Promise.all([f.done, ids.length ? wait(f.dur * 0.4).then(() => alive() && drawLegs(ids, tok, st.draw)) : null]);
-    } else if (ids.length) await drawLegs(ids, tok, st.draw);
+      const f = fly(t, st.dur ? { dur: st.dur * 1.4 } : { slow: 1.4, max: 2800 });
+      await Promise.all([f.done, ids.length ? wait(f.dur * 0.6).then(() => alive() && drawLegs(ids, tok, st.draw && st.draw * 1.4)) : null]);
+    } else if (ids.length) await drawLegs(ids, tok, st.draw && st.draw * 1.4);
     if (!alive()) return;
-    if (st.hold && !await hold(st.hold)) return;
+    if (st.hold && !await hold(st.hold * 1.6)) return;
   }
   endJourney(false);
 }
@@ -1681,8 +1741,8 @@ function sunCountdown(sun) {
 function countText(short) {
   const st = tripState();
   const meet = T.countTo === 'start';
-  if (st.k === 'days') return short ? L.chip(st.n) : (meet ? L.toStart : L.toGo)(st.n);
-  if (st.k === 'hours') return short ? L.chipHours(st.n) : (meet ? L.hoursToStart : L.hoursToGo)(st.n);
+  if (st.k === 'days') return short ? (meet ? L.chipStart : L.chip)(st.n) : (meet ? L.toStart : L.toGo)(st.n);
+  if (st.k === 'hours') return short ? (meet ? L.chipStartHours : L.chipHours)(st.n) : (meet ? L.hoursToStart : L.hoursToGo)(st.n);
   if (st.k === 'during') return short ? L.chipDuring(st.n) : L.during(st.n);
   return short ? '' : L.after;
 }
@@ -1694,8 +1754,7 @@ function renderAll() {
   const title = T.title[lang];
   $('#top-name').textContent = `${title.a} ${title.b}`;
   $$('#tabs button').forEach(b => { b.lastElementChild.textContent = L.tabs[b.dataset.tab]; });
-  [['#ctl-opening', L.opening], ['#ctl-all', L.all], ['#ctl-assam', L.regionView(T.region[lang])]].forEach(([s, t]) => { $(s).setAttribute('aria-label', t); $(s).title = t; });
-  $('#ctl-opening').hidden = reduce;
+  [['#ctl-all', L.all], ['#ctl-assam', L.regionView(T.region[lang])]].forEach(([s, t]) => { $(s).setAttribute('aria-label', t); $(s).title = t; });
   $('#credit').textContent = [GEO.credit, 'Terrain Tiles (AWS)', 'Natural Earth'].filter(Boolean).join(' · ');
   closePop();
   renderChip(); renderTimeline(); renderCard(); renderStories(); renderField(); renderInfo(); renderLeader(); renderFilter(); buildOverlay(); markStops(); render();
@@ -1719,16 +1778,17 @@ function factsHTML() {
 // the timeline: one chip per day, coloured by where we sleep
 function renderTimeline() {
   const tl = $('#timeline'), today = todayDate();
-  tl.innerHTML = `<button class="tl-play" type="button" data-play aria-label="${L.play}" title="${L.play}">${ic(playing ? 'pause' : 'play')}</button>` +
+  tl.innerHTML = `<button class="tl-nav" type="button" data-dstep="-1" aria-label="${L.prevDay}" title="${L.prevDay}">${ic('prev', 'flip')}</button><div class="tl-days">` +
     T.days.map(d => {
       const { m, d: dd } = parseDay(d.date);
       const big = d.n === 0 ? d.date.slice(8, 10) + '.' + pad2(m) : pad2(d.n);
       const small = d.n === 0 ? L.depart : `${dd}.${m}`;
       return `<button class="tl-day${d.date === today ? ' today' : ''}" role="tab" type="button" data-day="${d.n}" style="--area:${AREA[d.sun] || 'transparent'}" aria-label="${esc(d[lang].label + ' · ' + d[lang].title)}"><b>${esc(big)}</b><small>${esc(small)}</small></button>`;
-    }).join('');
+    }).join('') + `</div><button class="tl-nav" type="button" data-dstep="1" aria-label="${L.nextDay}" title="${L.nextDay}">${ic('next', 'flip')}</button>`;
   markTimeline();
 }
 function markTimeline() {
+  const nav = $$('#timeline .tl-nav'); if (nav.length) { nav[0].disabled = current <= D0(); nav[1].disabled = current >= D1(); }
   $$('#timeline .tl-day').forEach(b => {
     const n = +b.dataset.day, on = n === current;
     b.setAttribute('aria-selected', on); b.classList.toggle('done', current >= 0 && n < current);
@@ -1749,15 +1809,14 @@ function renderCard(anim) {
       <h1 class="tt"><span>${esc(title.a)}</span> <b>${esc(title.b)}</b></h1>
       <p class="dates">${esc(T.dates[lang])}</p>
       <p class="count">${ic('plane')}<span>${esc(countText(false))}</span></p>
-      <div class="acts"><button class="btn primary small" type="button" data-play>${ic(playing ? 'pause' : 'play')}<span>${playing ? L.pause : L.play}</span></button>
-        ${reduce ? '' : `<button class="btn small" type="button" data-journey>${ic('film')}<span>${L.opening}</span></button>`}</div>
+      <div class="acts"><button class="btn primary small" type="button" data-play>${ic(playing ? 'pause' : 'play')}<span>${playing ? L.pause : L.play}</span></button></div>
       <div class="xtra"><button class="pill" type="button" data-goto="stories">${ic('story')}<span>${esc(L.readOf(T.stories.filter(s => storyRead(s.id)).length, T.stories.length))}</span></button>${packPill()}</div></div>`;
   } else {
     const d = T.days.find(x => x.n === current), c = d[lang];
     const sun = d.sun ? sunTimes(d.date, T.places[d.sun].lonlat, T.tz) : null;
     const n = d.sun ? T.stories.filter(s => s.where === d.sun).length : 0;
     const isToday = sun && d.date === todayDate(), cd = isToday ? sunCountdown(sun) : '', xtra = dayExtras(d);
-    html = `<div class="ctl"><button type="button" data-dstep="-1" aria-label="${L.prevDay}"${current <= D0() ? ' disabled' : ''}>${ic('prev', 'flip')}</button><button type="button" data-dstep="1" aria-label="${L.nextDay}"${current >= D1() ? ' disabled' : ''}>${ic('next', 'flip')}</button><button type="button" data-cardclose aria-label="${L.close}">${ic('x')}</button></div>
+    html = `<div class="ctl"><button type="button" data-cardclose aria-label="${L.close}">${ic('x')}</button></div>
       <div class="c"><div class="hd"><span class="dl">${esc(c.label)}</span><span class="dd">${esc(dateLabel(d.date))}</span></div>
       <h3>${esc(c.title)}</h3><p>${esc(c.text)}</p>
       <div class="ft">${c.stay ? `<span>${ic('bed')}${esc(c.stay)}</span>` : ''}${sun ? `<span class="sun" title="${L.rise} / ${L.set}">${ic('rise')}${sun.rise}<span class="sr">${L.rise}</span> ${ic('set')}${sun.set}<span class="sr">${L.set}</span></span>` : ''}${cd ? `<span class="sunin">${ic('sun')}<span>${esc(cd)}</span></span>` : ''}</div>
@@ -1793,6 +1852,7 @@ function dayExtras(d) {
 // jump into a room and bring one part of it into view: 'stories', 'info:blk-flights', 'field:fa-rhino,fa-tiger'
 function goto(where) {
   const [room, ids] = where.split(':');
+  if (tab === 'route') { backDay = cardOpen && current >= 0 ? current : -1; backRoom = null; }
   setTab(room);
   if (!ids) return;
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -1848,12 +1908,11 @@ async function togglePlay() {
   while (playing && run === playRun && n <= D1()) {
     await goDay(n);
     if (!playing || run !== playRun) return;
-    await wait(n === D1() ? 600 : 1900);
+    await wait(1500);
     n++;
   }
   if (run === playRun && playing) setPlaying(false);
 }
-$('#ctl-opening').addEventListener('click', journey);
 $('#ctl-all').addEventListener('click', () => { stopAuto(); settleLegs(-1); closePop(); fly(fit(T.views.all)); });
 $('#ctl-assam').addEventListener('click', () => { stopAuto(); settleLegs(-1); closePop(); fly(fit(regionView())); });
 
@@ -1964,6 +2023,27 @@ function celebrate(sel, color, icon, done) {
 // ---------- essentials ----------
 let checks = {};
 try { checks = JSON.parse(store.get(KEY + '-check') || '{}') || {}; } catch (e) { checks = {}; }
+// "07:00 take-off to Abu Dhabi (EY 596). At 14:30 we continue to Delhi (EY 216), landing at 19:20. Pick-up to the hotel."
+// becomes a little timetable: 07:00 Take-off… / 14:30 We continue… / 19:20 Landing / · Pick-up…
+const TIME = /\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/;
+function schedSteps(text) {
+  const out = [], cap1 = t => t.charAt(0).toLocaleUpperCase() + t.slice(1);
+  const clean = (t, tm) => cap1(t.replace(new RegExp(`^(?:and\\s+|ו)?(?:at|from|around|by|ב[-־]?|בשעה|סביב|עד)?\\s*${tm.replace('.', '[:.]')}\\s*[,:–-]?\\s*`, 'i'), '')
+    .replace(new RegExp(`\\s*,?\\s*(?:at|around|ב[-־]?|בשעה)\\s*${tm.replace('.', '[:.]')}`, 'i'), '').replace(/\s+([,.])/g, '$1').trim());
+  for (const sen of String(text || '').split(/(?<=[.!?])\s+/).filter(Boolean)) {
+    const parts = sen.split(/,\s+/), clauses = parts.length > 1 && parts.slice(1).some(p => TIME.test(p)) ? parts : [sen];
+    for (const cl of clauses) {
+      const m = cl.match(TIME), tm = m ? `${m[1].padStart(2, '0')}:${m[2]}` : '';
+      out.push({ t: tm, x: m ? clean(cl, m[0]) : cap1(cl.trim()) });
+    }
+  }
+  return out.filter(s => s.x);
+}
+function schedHTML(text) {
+  const st = schedSteps(text);
+  if (!st.some(s => s.t)) return `<p class="full">${esc(text)}</p>`;
+  return `<ol class="sched">${st.map(s => `<li><span class="tm">${s.t ? esc(s.t) : '<i></i>'}</span><span>${esc(s.x.replace(/[.]$/, ''))}</span></li>`).join('')}</ol>`;
+}
 function renderInfo() {
   const I = L.i, fl = T.flights;
   const val = v => esc(tx(v));
@@ -1975,9 +2055,27 @@ function renderInfo() {
       ${inViewer ? '' : `<button class="pill" type="button" data-ics>${ic('download')}<span>${esc(I.cal)}</span></button>`}</div>`;
   const today = todayDate();
   const days = T.days.map(d => {
-    const { m, d: dd } = parseDay(d.date);
-    return `<button class="drow${d.date === today ? ' today' : ''}" type="button" data-dayrow="${d.n}" style="--area:${AREA[d.sun] || 'transparent'}">
-      <span class="n"><b>${pad2(d.n)}</b><small>${dd}.${m}</small></span><span><span class="h">${esc(d[lang].title)}</span><span class="p">${esc(d[lang].text)}</span></span>${ic('next')}</button>`;
+    const { m, d: dd } = parseDay(d.date), c = d[lang], S = L.sched, F = T.field;
+    const sun = d.sun && T.places[d.sun] ? sunTimes(d.date, T.places[d.sun].lonlat, T.tz) : null;
+    const look = F ? (d.look ? d.look.map(id => F.animals.find(a => a.id === id)).filter(Boolean)
+      : GROUPS.includes(d.sun) ? F.animals.filter(a => a.where === d.sun || a.where === 'both') : []) : [];
+    const ex = F && d.exercise && F.exercises.find(x => x.id === d.exercise);
+    const row = (k, v) => v ? `<div class="row"><b>${esc(k)}</b><span>${v}</span></div>` : '';
+    const open = d.date === today;
+    return `<div class="dday${open ? ' open' : ''}${d.date === today ? ' today' : ''}" style="--area:${AREA[d.sun] || 'transparent'}">
+      <button class="drow" type="button" data-dayrow="${d.n}" aria-expanded="${open}">
+      <span class="n"><b>${pad2(d.n)}</b><small>${dd}.${m}</small></span><span><span class="h">${esc(c.title)}</span><span class="p">${esc(c.text)}</span></span>${ic('next')}</button>
+      <div class="dpanel"><div class="dpin">
+        ${schedHTML(c.text)}
+        <div class="rows">
+          ${row(S.date, esc(dateLabel(d.date)))}
+          ${row(S.stay, c.stay ? esc(c.stay) : '')}
+          ${row(S.sun, sun ? `${sun.rise} / ${sun.set}` : '')}
+          ${row(S.look, look.length ? esc(look.map(a => a[lang].name).join(', ')) : '')}
+          ${row(S.ex, ex ? esc(ex[lang].title) : '')}
+        </div>
+        <button class="btn small" type="button" data-daymap="${d.n}">${ic('pin')}<span>${esc(S.map)}</span></button>
+      </div></div></div>`;
   }).join('');
   const flights = fl.rows.map(r => `<div class="fl${r.pending ? ' pending' : ''}">
       <span class="d">${esc(r.date)}</span><span class="t">${val(r.time)}</span>
@@ -2058,7 +2156,8 @@ function downloadICS() {
 $('#info').addEventListener('click', e => {
   if (e.target.closest('[data-ics]')) { downloadICS(); return; }
   const j = e.target.closest('[data-jump]'); if (j) { goto('info:' + j.dataset.jump); return; }
-  const d = e.target.closest('[data-dayrow]'); if (d) { setTab('route'); setPlaying(false); goDay(+d.dataset.dayrow); }
+  const d = e.target.closest('[data-dayrow]'); if (d) { const w = d.closest('.dday'), on = !w.classList.contains('open'); w.classList.toggle('open', on); d.setAttribute('aria-expanded', on); return; }
+  const dm = e.target.closest('[data-daymap]'); if (dm) { backDay = -1; backRoom = { tab: 'info', day: +dm.dataset.daymap }; setTab('route'); setPlaying(false); goDay(+dm.dataset.daymap); return; }
 });
 function weatherSVG(wx) {
   const I = L.i, rtl = lang === 'he';
@@ -2125,9 +2224,30 @@ function setTab(name, opts = {}) {
   ROOMS.forEach(r => { $('#' + r).hidden = r !== name; });
   if (name !== 'route') { setPlaying(false); closePop(); if (journeyOn) { seq++; endJourney(false); } }
   if (changed && name !== 'route' && !reduce) { const el = $('#' + name); el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); el.scrollTop = 0; }
+  if (name === 'route') backDay = -1;
+  renderBack();
   if (opts.hist !== false && (changed || !fromPop)) hist(changed && !fromPop && opts.push !== false, { tab: name });
 }
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { if (b.dataset.tab !== tab) { backDay = -1; backRoom = null; } setTab(b.dataset.tab); } });
+// a way home from every room: back to the map, and to the day you came from
+let backDay = -1, backRoom = null;   // backRoom: the page you left for the map, e.g. the day-by-day schedule
+function renderBack() {
+  const b = $('#back'), off = tab === 'route' && !backRoom;
+  b.hidden = off; document.body.classList.toggle('back-on-map', tab === 'route' && !off);
+  b.lastElementChild.textContent = L.back; b.setAttribute('aria-label', L.back); b.title = L.back;
+}
+$('#back').addEventListener('click', () => {
+  if (tab === 'route' && backRoom) {
+    const r = backRoom; backRoom = null; setTab(r.tab);
+    const row = r.day != null && $(`[data-dayrow="${r.day}"]`);
+    if (row) { const w = row.closest('.dday'); w.classList.add('open'); row.setAttribute('aria-expanded', 'true');
+      requestAnimationFrame(() => requestAnimationFrame(() => w.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' }))); }
+    return;
+  }
+  const n = backDay;
+  setTab('route');
+  if (n >= 0 && T.days.some(d => d.n === n)) { if (n !== current) goDay(n, false); else { cardOpen = true; renderCard('in'); } }
+});
 $('#tabs').addEventListener('keydown', e => {
   const d = { ArrowRight: lang === 'he' ? -1 : 1, ArrowLeft: lang === 'he' ? 1 : -1 }[e.key];
   if (!d) return;
