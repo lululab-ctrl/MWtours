@@ -158,8 +158,7 @@ function render(photos) {
         <span class="pill ${ready ? 'on' : 'off'}">${ready ? 'Connected' : 'Not connected'}</span></span></div>
 
       <h3>${ready ? 'Expedition code' : 'Connect this expedition'}</h3>
-      ${ready ? `<div class="row"><label>New code<input class="code" data-new spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026"></label>
-          <label>Type it again<input class="code" data-new2 spellcheck="false" autocapitalize="characters"></label>
+      ${ready ? `<div class="row one"><label>New code<input class="code" data-new spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026"></label>
           <button class="btn" type="button" data-save>Change code</button></div>
         <p class="hint">Changes at once. New travelers use the new code; those who already joined stay in.</p>`
       : `<div class="row one"><label>The code this expedition opens with today<input class="code" data-secret spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026" value="${esc(saved(t.slug))}"></label>
@@ -200,14 +199,14 @@ $('#tours').addEventListener('click', async e => {
     } catch (err) { btn.disabled = false; say(msg, 'Could not save: ' + (err.message || err), 'err'); }
   }
   if (btn.matches('[data-save]')) {
-    const a = card.querySelector('[data-new]').value, b = card.querySelector('[data-new2]').value;
+    const a = card.querySelector('[data-new]').value;
     if (norm(a).length < 4) return say(msg, 'Use at least 4 letters or numbers.', 'err');
-    if (norm(a) !== norm(b)) return say(msg, 'The two codes don’t match.', 'err');
+    if (!confirm(`Change the code of ${t.title?.en || t.slug} to ${norm(a)}?`)) return;
     btn.disabled = true;
     const { error } = await sb.rpc('admin_set_tour', { p_slug: t.slug, p_title: null, p_secret: null, p_code: a });
     btn.disabled = false;
     if (error) return say(msg, 'Could not save: ' + error.message, 'err');
-    card.querySelector('[data-new]').value = card.querySelector('[data-new2]').value = '';
+    card.querySelector('[data-new]').value = '';
     say(msg, `Done. The code is now ${norm(a)}.`, 'ok');
   }
   if (btn.matches('[data-rm]')) {
