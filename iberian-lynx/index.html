@@ -733,7 +733,6 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
       </form>
       <p class="gate-note" data-ui="gateNote" style="--i:5"></p>
       <a class="gate-all" href="../" data-ui="allTours" style="--i:6"></a>
-      <a class="gate-all" href="../" data-ui="allTours" style="--i:6"></a>
     </div>
   </section>
 
@@ -929,7 +928,6 @@ function applyLang() {
   $('#app').dir = root.dir;
   $$('[data-lang-toggle]').forEach(b => { b.textContent = L.langBtn; b.setAttribute('aria-label', L.langLabel); });
   $$('[data-ui]').forEach(el => { el.textContent = L[el.dataset.ui]; });
-  { const o = $('#logout'); if (o) { o.setAttribute('aria-label', L.logout); o.title = L.logout; } }
   { const o = $('#logout'); if (o) { o.setAttribute('aria-label', L.logout); o.title = L.logout; } }
   const title = VAULT.pub.title[lang];
   $$('[data-pub="title"]').forEach(el => { el.innerHTML = `<span>${esc(title.a)}</span> <b>${esc(title.b)}</b>`; });

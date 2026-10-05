@@ -30,6 +30,21 @@
       "end": "2026-11-15",
       "cover": "iberian-lynx/photos/lynx.jpg",
       "slug": "lynx-2026"
+    },
+    {
+      "path": "pyrenees/",
+      "title": {
+        "en": "Heart of the Pyrenees",
+        "he": "לב הרי הפירנאים"
+      },
+      "place": {
+        "en": "Catalonia, Spain",
+        "he": "קטלוניה, ספרד"
+      },
+      "start": "2026-11-19",
+      "end": "2026-11-22",
+      "cover": "pyrenees/photos/bearded-vulture.jpg",
+      "slug": "pyrenees-2026"
     }
   ]
 }
