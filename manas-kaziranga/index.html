@@ -828,7 +828,7 @@ const AREA = { kaz: 'var(--leaf)', ghy: 'var(--fog)', man: 'var(--amber)' };
 const UI = {
   he: {
     langBtn: 'EN', langLabel: 'Switch to English',
-    gateLabel: 'קוד המסע', gateBtn: 'כניסה', gateBusy: 'פותחים…', gateNote: 'את הקוד שולח לכם מתן.', allTours: '› לכל המסעות', logout: 'יציאה ובחירת מסע אחר',
+    gateLabel: 'קוד המסע', gateBtn: 'כניסה', gateBusy: 'פותחים…', gateNote: 'את הקוד שולח לכם מתן.', allTours: '› לכל המסעות', logout: 'מעבר למסע אחר',
     gateErr: 'הקוד לא תואם. בדקו אותו בהודעה ונסו שוב.', gateEmpty: 'הקלידו את קוד המסע.',
     tabs: { route: 'מסלול', stories: 'סיפורים', field: 'בשטח', info: 'חשוב לדעת', leader: 'המדריך' },
     play: 'הפעלת המסלול', pause: 'עצירה', all: 'כל הדרך', assam: 'מבט על אסאם', opening: 'צפייה בפתיחה', skip: 'דלגו',
@@ -861,7 +861,7 @@ const UI = {
   },
   en: {
     langBtn: 'עב', langLabel: 'עברית',
-    gateLabel: 'Expedition code', gateBtn: 'Enter', gateBusy: 'Opening…', gateNote: 'Matan sends you the code.', allTours: '‹ All expeditions', logout: 'Log out and choose another expedition',
+    gateLabel: 'Expedition code', gateBtn: 'Enter', gateBusy: 'Opening…', gateNote: 'Matan sends you the code.', allTours: '‹ All expeditions', logout: 'Switch expedition',
     gateErr: "That code doesn't match. Check it in the message and try again.", gateEmpty: 'Type in your expedition code.',
     tabs: { route: 'Route', stories: 'Stories', field: 'Field', info: 'Essentials', leader: 'Leader' },
     play: 'Play the route', pause: 'Pause', all: 'The whole way', assam: 'Assam overview', opening: 'Watch the opening', skip: 'Skip',
@@ -947,12 +947,9 @@ async function tryCode(code, quiet) {
   open(quiet);
   return true;
 }
-// log out: forget this expedition's code on this device and go back to the list of expeditions
-$('#logout').addEventListener('click', () => {
-  try { localStorage.removeItem(KEY + '-code'); } catch (e) {}
-  try { history.replaceState(null, '', location.pathname); } catch (e) {}
-  location.href = '../';
-});
+// switch expedition: back to the list of expeditions. The code stays saved on this device,
+// so coming back to this expedition opens it straight away.
+$('#logout').addEventListener('click', () => { location.href = '../'; });
 $('#gate-form').addEventListener('submit', e => { e.preventDefault(); tryCode($('#code').value); });
 
 // ---------- map: Web Mercator in zoom-8 pixels, measured from the tour's origin ----------
