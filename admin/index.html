@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Expedition codes · MW Photo Tours</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&family=Montserrat:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
+<style>
+:root{--night:#0A0908;--forest-night:#0C2925;--paper:#FEFBF1;--off:#F4F4F4;--gold:#F4AF56;--gold-soft:#E4AA7C;--amber:#E8A23E;--leaf:#A9C48C;--red:#F08A7A;
+  --muted:rgba(244,244,244,.78);--faint:rgba(244,244,244,.56);--rule:rgba(254,251,241,.14);
+  --sans:"Google Sans","Helvetica Neue",Arial,sans-serif;--label:"Montserrat","Google Sans","Helvetica Neue",Arial,sans-serif;--pill:64px;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(120% 60% at 50% 0,#12403A 0,var(--forest-night) 40%,var(--night) 100%) no-repeat var(--night);color:var(--off);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+main{width:min(560px,100%);margin:0 auto;padding:calc(40px + env(safe-area-inset-top)) 16px 60px;display:grid;gap:22px}
+.lbl{margin:0;font:600 11.5px/1.4 var(--label);letter-spacing:.22em;text-transform:uppercase;color:var(--gold-soft)}
+h1{margin:0;font-size:clamp(30px,7vw,40px);line-height:1.1;font-weight:700;color:var(--paper)}
+.lede{margin:0;color:var(--muted)}
+.card{display:grid;gap:16px;padding:22px;border-radius:22px;background:rgba(254,251,241,.04);border:1px solid var(--rule)}
+.step{display:flex;align-items:center;gap:12px;font-weight:700;color:var(--paper)}
+.step i{font:700 12px/1 var(--label);font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--gold);color:var(--gold)}
+label{display:grid;gap:6px;font-size:14px;color:var(--muted)}
+input,select{width:100%;height:50px;padding-inline:16px;border-radius:14px;border:1px solid rgba(254,251,241,.28);background:rgba(10,9,8,.45);color:var(--paper);font-size:16px}
+input:focus,select:focus{outline:none;border-color:var(--gold)}
+input.code{font:600 17px/1 var(--label);letter-spacing:.14em;text-transform:uppercase}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.row{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding-inline:22px;border-radius:var(--pill);border:1px solid var(--gold);background:radial-gradient(130% 160% at 0 0,rgba(244,175,86,.24),transparent 46%);color:var(--off);font-weight:700;cursor:pointer;text-decoration:none}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{border-color:rgba(244,244,244,.35);background:none}
+.hint{margin:0;font-size:13.5px;color:var(--faint)}
+.msg{margin:0;min-height:1.5em;font-size:14.5px}
+.msg.err{color:var(--red)} .msg.ok{color:var(--leaf)}
+ol{margin:0;padding-inline-start:20px;display:grid;gap:8px;color:var(--muted)}
+ol b{color:var(--paper)}
+code{font:600 13.5px/1 var(--label);color:var(--gold-soft)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div style="display:grid;gap:8px">
+    <p class="lbl">MW Photo Tours · Admin</p>
+    <h1>Change an expedition code</h1>
+    <p class="lede">Pick the expedition, type its current code and the new one. This page makes a new version of the expedition page locked with the new code. Everything happens on this device; codes are never sent anywhere.</p>
+  </div>
+
+  <form class="card" id="f" autocomplete="off">
+    <div class="step"><i>1</i>Expedition</div>
+    <select id="tour" required></select>
+    <div class="step"><i>2</i>Codes</div>
+    <label>Current code<input class="code" id="old" required spellcheck="false" autocapitalize="characters"></label>
+    <div class="row">
+      <label>New code<input class="code" id="new1" required spellcheck="false" autocapitalize="characters"></label>
+      <label>New code again<input class="code" id="new2" required spellcheck="false" autocapitalize="characters"></label>
+    </div>
+    <p class="hint">Codes ignore capital letters, spaces and dashes: <code>assam-2026</code> and <code>ASSAM 2026</code> are the same code. Use at least 6 characters.</p>
+    <button class="btn" id="run" type="submit">Make the new version</button>
+    <p class="msg" id="msg" role="status"></p>
+  </form>
+
+  <section class="card" id="done" hidden>
+    <div class="step"><i>3</i>Upload it</div>
+    <ol>
+      <li><b>Download</b> the new page: <a class="btn ghost" id="dl" download="index.html" style="min-height:40px;margin-top:6px">Download index.html</a></li>
+      <li>On GitHub, open the expedition’s folder <code id="folder"></code> and choose <b>Add file → Upload files</b><span id="uplink"></span>.</li>
+      <li>Drop in the downloaded <b>index.html</b> (it replaces the old one) and press <b>Commit changes</b>.</li>
+      <li>After a minute or two the new code works. Travelers who saved the old code will be asked for the new one.</li>
+    </ol>
+  </section>
+</main>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const norm = c => c.toUpperCase().replace(/[\s\-–_.]/g, '');
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const toB64 = u => { let s = ''; u.forEach(b => s += String.fromCharCode(b)); return btoa(s); };
+const VAULT_RE = /(<script id="vault" type="application\/json">)([\s\S]*?)(<\/script>)/;
+let tours = [];
+
+// the same lock the expedition pages use: PBKDF2-SHA256 → AES-GCM 256
+async function keyFor(code, salt, iter, use) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(norm(code)), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, [use]);
+}
+async function unlock(v, code) {
+  const k = await keyFor(code, b64(v.salt), v.iter, 'decrypt');
+  return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(v.iv) }, k, b64(v.data)));
+}
+async function lock(v, plain, code) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const k = await keyFor(code, salt, v.iter, 'encrypt');
+  const data = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, plain));
+  return { ...v, salt: toB64(salt), iv: toB64(iv), data: toB64(data) };
+}
+
+function say(t, cls) { const m = $('#msg'); m.textContent = t; m.className = 'msg' + (cls ? ' ' + cls : ''); }
+
+$('#f').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('#done').hidden = true;
+  const t = tours[+$('#tour').value], old = $('#old').value, n1 = $('#new1').value, n2 = $('#new2').value;
+  if (!t) return say('Choose an expedition.', 'err');
+  if (norm(n1) !== norm(n2)) return say('The two new codes don’t match.', 'err');
+  if (norm(n1).length < 6) return say('The new code needs at least 6 letters or numbers.', 'err');
+  if (norm(n1) === norm(old)) return say('The new code is the same as the current one.', 'err');
+  const btn = $('#run'); btn.disabled = true; say('Working… this takes a few seconds.');
+  try {
+    const html = await fetch('../' + t.path + 'index.html', { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error('page'); return r.text(); });
+    const m = html.match(VAULT_RE); if (!m) throw new Error('vault');
+    const v = JSON.parse(m[2]);
+    let plain;
+    try { plain = await unlock(v, old); } catch (err) { throw new Error('code'); }
+    const nv = await lock(v, plain, n1);
+    // check the new version opens with the new code before handing it over
+    const back = await unlock(nv, n1); if (back.length !== plain.length) throw new Error('verify');
+    const out = html.replace(VAULT_RE, (_, a, __, c) => a + JSON.stringify(nv) + c);
+    const a = $('#dl'); if (a.href) URL.revokeObjectURL(a.href);
+    a.href = URL.createObjectURL(new Blob([out], { type: 'text/html' }));
+    $('#folder').textContent = t.path;
+    const gh = location.hostname.endsWith('.github.io') ? { owner: location.hostname.split('.')[0], repo: location.pathname.split('/').filter(Boolean)[0] } : null;
+    $('#uplink').innerHTML = gh && gh.repo ? ` (<a href="https://github.com/${gh.owner}/${gh.repo}/upload/main/${t.path}" target="_blank" rel="noopener" style="color:var(--gold-soft)">open it directly</a>)` : '';
+    $('#done').hidden = false; $('#done').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    say('Done. The new version is locked with the new code and was checked.', 'ok');
+  } catch (err) {
+    say({ code: 'The current code is wrong for this expedition.', page: 'Couldn’t load this expedition’s page. Check its folder name in tours.json.', vault: 'This page has no locked content to change.' }[err.message] || 'Something went wrong. Please try again.', 'err');
+  } finally { btn.disabled = false; }
+});
+
+fetch('../tours.json', { cache: 'no-cache' }).then(r => r.json()).then(d => {
+  tours = (d.tours || []).filter(t => t && t.path);
+  $('#tour').innerHTML = tours.map((t, i) => `<option value="${i}">${(t.title && (t.title.en || t.title.he)) || t.path}${t.start ? ' · ' + t.start : ''}</option>`).join('');
+}).catch(() => say('Couldn’t load the list of expeditions.', 'err'));
+})();
+</script>
+</body>
+</html>

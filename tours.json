@@ -1,0 +1,13 @@
+{
+  "_help": "One entry per expedition. 'path' is the tour's folder. Dates are YYYY-MM-DD. Add a new tour by copying an entry.",
+  "tours": [
+    {
+      "path": "manas-kaziranga/",
+      "title": { "en": "Manas & Kaziranga", "he": "מאנאס וקזירנגה" },
+      "place": { "en": "Assam, India", "he": "אסאם, הודו" },
+      "start": "2026-11-01",
+      "end": "2026-11-09",
+      "cover": "manas-kaziranga/photos/kaz.jpg"
+    }
+  ]
+}
