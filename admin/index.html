@@ -139,6 +139,8 @@ async function load() {
 }
 
 let lastPhotos = [];
+// a browser that has opened an expedition keeps its code (mw-tour-<slug>-code): offer it, so nothing has to be typed
+const saved = slug => { try { return localStorage.getItem('mw-tour-' + slug + '-code') || ''; } catch (e) { return ''; } };
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const hay = t => [t.title?.en, t.title?.he, t.place?.en, t.place?.he, t.slug, t.start, t.end,
   ...[t.start, t.end].filter(Boolean).map(d => MONTHS[+d.slice(5, 7) - 1] + ' ' + d.slice(0, 4))].join(' ').toLowerCase();
@@ -160,8 +162,9 @@ function render(photos) {
           <label>Type it again<input class="code" data-new2 spellcheck="false" autocapitalize="characters"></label>
           <button class="btn" type="button" data-save>Change code</button></div>
         <p class="hint">Changes at once. New travelers use the new code; those who already joined stay in.</p>`
-      : `<div class="row one"><label>The code this expedition opens with today<input class="code" data-secret spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026"></label>
+      : `<div class="row one"><label>The code this expedition opens with today<input class="code" data-secret spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026" value="${esc(saved(t.slug))}"></label>
           <button class="btn" type="button" data-connect>Connect</button></div>
+        ${saved(t.slug) ? '<p class="msg ok" style="margin:0">Found on this device: this browser already opened the expedition, so its code is filled in. Tap Connect.</p>' : ''}
         <p class="hint">Needed only once. The code is checked against the expedition before saving; after that travelers join with this code + their name.</p>`}
       <p class="msg" data-msg role="status"></p>
 
