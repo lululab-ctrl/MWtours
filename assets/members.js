@@ -137,8 +137,6 @@ function mountGate() {
   inp.setAttribute('autocapitalize', 'words'); inp.className = 'mw-name';
   const first = form.querySelector('label[for="code"]');
   form.insertBefore(inp, first); form.insertBefore(lab, inp);
-  const hint = document.createElement('p'); hint.className = 'mw-hint'; hint.id = 'mw-hint'; hint.textContent = w.nameHint;
-  $('#gate-err').after(hint);
 
   form.addEventListener('submit', async e => {
     if (bypass) { bypass = false; return; }               // let the page open it with the key
