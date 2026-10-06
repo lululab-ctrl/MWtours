@@ -16,7 +16,7 @@ commit finished work straight to `main`; there is no build step.
 - `admin/`: Matan's admin (Supabase login): connect an expedition once with its code, see the code,
   add the traveler list (only a name on it can join: first, middle or last name, then the code; an empty
   list means no one can join; the first sign-in needs a connection, there is no code-only way in),
-  shared photos. Tapping a joined traveler's name opens `<tour>/?as=<member id>`: that traveler's view,
+  shared photos. Tapping a traveler's name opens `<tour>/?as=<member or list id>` (also before they joined): that traveler's view,
   read only (`assets/viewas.js` keeps their lists in that tab so the admin's own are untouched).
 - `assets/`: favicon set (same as the MWP site), logo, contour image.
 - Supabase project `uiydebfzuxnxjqcnrylv`. Setup and updates are plain `.txt` files (not `.sql`).

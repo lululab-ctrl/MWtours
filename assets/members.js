@@ -553,7 +553,7 @@ async function asView() {
     if (!data.session || data.session.user.is_anonymous) return asBar(w.asSignIn);
     const r = await timeout(rpc('admin_view_member', { p_member: AS }), 9000);
     if (!r || r.tour_slug !== SLUG) return asBar(w.asMissing);
-    member = { id: AS, name: r.name }; viewer = true;
+    member = { id: r.member_id || 'not-joined', name: r.name }; viewer = true;   // not joined yet: a fresh view, no shots
     let changed = norm(ls.get(KEY + '-code')) !== norm(r.secret);
     ls.set(KEY + '-code', norm(r.secret));
     for (const p of PARTS) { const v = r.state && r.state[p] != null ? String(r.state[p]) : null; if (v !== ls.get(KEY + '-' + p) && v != null) { ls.set(KEY + '-' + p, v); changed = true; } }

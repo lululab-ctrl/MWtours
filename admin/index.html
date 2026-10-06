@@ -208,7 +208,7 @@ function render(photos) {
       <div class="trh"><h3>Travelers · ${trav.length}</h3>${ready ? `<button class="plus" type="button" data-plus aria-label="Add a traveler" title="Add a traveler"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>` : ''}</div>
       ${ready ? `<form class="add" data-addform ${openAdd === t.slug ? '' : 'hidden'}><input data-names type="text" placeholder="Full name" autocomplete="off" spellcheck="false" aria-label="Traveler's full name"><button class="btn small" type="submit">Add</button></form>` : ''}
       ${rows.length ? `<div class="tbl"><table><thead><tr><th>Name</th><th>Status</th><th>Last active</th><th>Photos</th><th></th></tr></thead><tbody>
-        ${rows.map(x => `<tr><td>${x.m ? `<a class="who" href="../${esc(t.path)}?as=${esc(x.m.id)}" target="_blank" rel="noopener" title="Open ${esc(x.name)}'s view">${esc(x.name)}</a>` : `<b>${esc(x.name)}</b>`}</td>
+        ${rows.map(x => `<tr><td><a class="who" href="../${esc(t.path)}?as=${esc(x.m ? x.m.id : x.t.id)}" target="_blank" rel="noopener" title="Open ${esc(x.name)}'s view">${esc(x.name)}</a></td>
           <td><span class="st ${x.m ? (x.t ? 'in' : 'extra') : 'wait'}">${x.m ? (x.t ? 'Joined' : 'Not on list') : 'Not joined yet'}</span></td>
           <td>${x.m ? fmt(x.m.last_seen) : '–'}</td><td>${x.m ? x.m.photos : '–'}</td>
           <td><button class="btn danger small" type="button" ${x.t ? `data-rmt="${esc(x.t.id)}"` : `data-rm="${esc(x.m.id)}"`} data-name="${esc(x.name)}">Remove</button></td></tr>`).join('')}
