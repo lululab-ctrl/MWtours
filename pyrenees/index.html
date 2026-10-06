@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><link rel="icon" href="../assets/favicon.ico" sizes="32x32"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png"><script src="../assets/viewas.js?v=202610061447"></script><script src="../assets/members.js?v=202610061447" defer></script><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><link rel="icon" href="../assets/favicon.ico" sizes="32x32"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png"><script src="../assets/viewas.js?v=202610061456"></script><script src="../assets/members.js?v=202610061456" defer></script><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>לב הרי הפירנאים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -954,12 +954,30 @@ async function decrypt(code) {
   const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(VAULT.iv) }, key, b64(VAULT.data));
   return JSON.parse(new TextDecoder().decode(buf));
 }
+// a traveler's own version of the trip (their flights, their return): T.personal = [{ names: [...], patch: {...} }].
+// The signed-in name must contain every word of one of the names. A patch merges into the trip:
+// objects merge, arrays and plain values replace, null removes, and "days" is keyed by day number.
+function personalize(t) {
+  const P = t && t.personal; if (!Array.isArray(P) || !P.length) return t;
+  let me = null; try { me = JSON.parse(store.get('mw-tour-' + t.slug + '-member') || 'null'); } catch (e) {}
+  const words = s => String(s || '').toLowerCase().split(/[\s,.\-–_]+/).filter(Boolean);
+  const mine = words(me && me.name);
+  if (!mine.length) return t;
+  const hit = P.find(p => (p.names || []).some(n => { const w = words(n); return w.length && w.every(x => mine.includes(x)); }));
+  if (!hit) return t;
+  const obj = x => x && typeof x === 'object' && !Array.isArray(x);
+  const merge = (a, b) => { for (const [k, v] of Object.entries(b)) { if (v === null) delete a[k]; else if (obj(v) && obj(a[k])) merge(a[k], v); else a[k] = v; } return a; };
+  const { days, ...rest } = hit.patch || {};
+  merge(t, rest);
+  if (days) for (const [n, d] of Object.entries(days)) { const day = t.days.find(x => String(x.n) === n); if (day) merge(day, d); }
+  return t;
+}
 async function tryCode(code, quiet) {
   const err = $('#gate-err'), btn = $('#gate-btn'), form = $('#gate-form');
   if (!norm(code)) { if (!quiet) err.textContent = L.gateEmpty; return false; }
   btn.disabled = true; btn.firstElementChild.textContent = L.gateBusy; err.textContent = '';
   try {
-    T = await decrypt(code);
+    T = personalize(await decrypt(code));
     for (const l of ['he', 'en']) deepMerge(UI[l], T.ui && T.ui[l]);
   } catch (e) {
     if (!quiet) { err.textContent = L.gateErr; form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); $('#code').select(); }

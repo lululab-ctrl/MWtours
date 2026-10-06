@@ -190,7 +190,7 @@ async function resume() {
       const j = ls.get(NAME) ? await rpc('join_tour', { p_slug: SLUG, p_code: code, p_name: ls.get(NAME) }) : null;
       if (j && !j.error) {
         member = { id: j.member_id, name: j.name }; ls.set(ME, JSON.stringify(member)); viewer = true;
-        if (applyState(j.state)) { await save(); return reopen(); }
+        if (applyState(j.state) || !gateOpen()) { await save(); return reopen(); }   // reopen with their lists and their own flights
         save(); decorate(true); loadPhotos(); return;
       }
       const why = { name_not_listed: 'notListed', name_ambiguous: 'ambiguous', wrong_code: 'newCode', tour_not_ready: 'notOpen', too_many_attempts: 'many' };
@@ -201,8 +201,9 @@ async function resume() {
       await viewWithCode();                     // expedition not connected yet: the page works on this device only
       decorate(true); if (viewer) loadPhotos(); return;
     }
+    const before = (member && member.name) || '';
     member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member)); viewer = true;
-    const changed = applyState(r.state);
+    const changed = applyState(r.state) || (before !== r.name && !gateOpen());   // a new name can mean their own flights
     const codeNow = norm(ls.get(KEY + '-code')), key = norm(r.secret);
     if (key && codeNow !== key) { ls.set(KEY + '-code', key); if (gateOpen() || changed) return reopen(); }
     if (changed) return reopen();
@@ -555,6 +556,7 @@ async function asView() {
     if (!r || r.tour_slug !== SLUG) return asBar(w.asMissing);
     member = { id: r.member_id || 'not-joined', name: r.name }; viewer = true;   // not joined yet: a fresh view, no shots
     let changed = norm(ls.get(KEY + '-code')) !== norm(r.secret);
+    if (ls.get(ME) !== JSON.stringify(member)) { ls.set(ME, JSON.stringify(member)); changed = true; }   // the page picks their own flights by name
     ls.set(KEY + '-code', norm(r.secret));
     for (const p of PARTS) { const v = r.state && r.state[p] != null ? String(r.state[p]) : null; if (v !== ls.get(KEY + '-' + p) && v != null) { ls.set(KEY + '-' + p, v); changed = true; } }
     const show = () => asBar(W().asView(member.name), true);
