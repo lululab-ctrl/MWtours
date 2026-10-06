@@ -1920,7 +1920,7 @@ function heroHTML(room, kicker, title, lede, extra = '') {
   const head = `<p class="lbl" style="--i:0">${esc(kicker)}</p><h2 class="tt silver" style="--i:1"><span>${esc(title[0])}</span> <b>${esc(title[1])}</b></h2>${lede ? `<p class="lede" style="--i:2">${esc(lede)}</p>` : ''}${extra}`;
   if (!h) return `<div class="wrap"><header class="rh">${head}</header></div>`;
   // on a wide screen the words sit beside the subject, on the side the photo leaves open
-  const side = 'side-' + (h.side || (h.focus && h.focus[0] > 0.5 ? 'l' : 'r'));
+  const side = 'side-' + (room === 'info' ? 'l' : h.side || (h.focus && h.focus[0] > 0.5 ? 'l' : 'r'));   // Good to know: always on the left
   return `<header class="hero ${side}"><figure><img src="${esc(h.src)}" alt="" decoding="async"${objPos(h.focus)}></figure><div class="in">${head}</div></header>`;
 }
 
