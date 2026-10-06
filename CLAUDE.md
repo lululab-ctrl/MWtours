@@ -21,6 +21,14 @@ commit finished work straight to `main`; there is no build step.
 - `assets/`: favicon set (same as the MWP site), logo, contour image.
 - Supabase project `uiydebfzuxnxjqcnrylv`. Setup and updates are plain `.txt` files (not `.sql`).
 
+## Every expedition gets the same features (fill them in the vault when making a new one)
+- Map: each day its own frame; park days a `spot` (gold ring + label) where the day happens.
+- Per-traveler flights: `personal` entries matched by name (Manas & Kaziranga is the example).
+- Header photos (`heroes.<room>`): HD (about 2560 px wide), `focus`, optional `tall` (people photos),
+  optional `phone` image + `phoneFocus` when the subject would sit under the title on a phone.
+- Leader: optional `leader.story` {he, en: {kicker, by, text[]}}, shown in the text column beside the photo.
+- No photo beside the Flights block.
+
 ## Rules
 - Keep all three tours on the same interface: a UI change to one tour goes into the others too
   (only the vault, the map data and the photos differ between them).
