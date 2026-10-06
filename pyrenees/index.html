@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><link rel="icon" href="../assets/favicon.ico" sizes="32x32"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png"><script src="../assets/viewas.js?v=202610061456"></script><script src="../assets/members.js?v=202610061456" defer></script><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><link rel="icon" href="../assets/favicon.ico" sizes="32x32"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png"><script src="../assets/viewas.js?v=202610061503"></script><script src="../assets/members.js?v=202610061503" defer></script><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>לב הרי הפירנאים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -861,7 +861,7 @@ const UI = {
     during: n => n === 0 ? 'היום יוצאים לדרך' : `היום: יום ${pad2(n)} מתוך ${pad2(D1())}`, chipDuring: n => n === 0 ? 'יוצאים' : `יום ${pad2(n)}`,
     after: 'המסע הסתיים. תודה שהייתם איתנו.',
     weekday: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
-    rise: 'זריחה', set: 'שקיעה', depart: 'יציאה',
+    rise: 'זריחה', set: 'שקיעה', depart: 'יציאה', home: 'טיסה הביתה',
     storiesHere: n => n === 1 ? 'סיפור אחד מהאזור' : `${n} סיפורים מהאזור`, storiesN: n => n === 1 ? 'סיפור אחד' : `${n} סיפורים`,
     showOnMap: n => `${n} סיפורים על המפה`, toDay: n => n === 0 ? 'ליום היציאה' : `ליום ${pad2(n)}`,
     airport: 'שדה תעופה', stop: 'תחנה במסע', next: 'הבא', prev: 'הקודם', of: (a, b) => `${a} מתוך ${b}`, seenMark: name => `ראיתי ${name}`,
@@ -894,7 +894,7 @@ const UI = {
     during: n => n === 0 ? 'Today we set off' : `Today: day ${pad2(n)} of ${pad2(D1())}`, chipDuring: n => n === 0 ? 'Departing' : `Day ${pad2(n)}`,
     after: 'The expedition is over. Thank you for coming with us.',
     weekday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    rise: 'Sunrise', set: 'Sunset', depart: 'Departure',
+    rise: 'Sunrise', set: 'Sunset', depart: 'Departure', home: 'Flight home',
     storiesHere: n => n === 1 ? 'One story from here' : `${n} stories from here`, storiesN: n => n === 1 ? 'One story' : `${n} stories`,
     showOnMap: n => `${n} stories on the map`, toDay: n => n === 0 ? 'To departure day' : `To day ${pad2(n)}`,
     airport: 'Airport', stop: 'On the route', next: 'Next', prev: 'Previous', of: (a, b) => `${a} of ${b}`, seenMark: name => `Seen: ${name}`,
@@ -962,14 +962,17 @@ function personalize(t) {
   let me = null; try { me = JSON.parse(store.get('mw-tour-' + t.slug + '-member') || 'null'); } catch (e) {}
   const words = s => String(s || '').toLowerCase().split(/[\s,.\-–_]+/).filter(Boolean);
   const mine = words(me && me.name);
-  if (!mine.length) return t;
+  if (!mine.length) { document.documentElement.dataset.personal = 'no'; return t; }
   const hit = P.find(p => (p.names || []).some(n => { const w = words(n); return w.length && w.every(x => mine.includes(x)); }));
+  document.documentElement.dataset.personal = hit ? 'yes' : 'no';
   if (!hit) return t;
   const obj = x => x && typeof x === 'object' && !Array.isArray(x);
   const merge = (a, b) => { for (const [k, v] of Object.entries(b)) { if (v === null) delete a[k]; else if (obj(v) && obj(a[k])) merge(a[k], v); else a[k] = v; } return a; };
   const { days, ...rest } = hit.patch || {};
   merge(t, rest);
-  if (days) for (const [n, d] of Object.entries(days)) { const day = t.days.find(x => String(x.n) === n); if (day) merge(day, d); }
+  // a day the traveler has on their own (e.g. a later flight home) is added; the others merge
+  if (days) for (const [n, d] of Object.entries(days)) { const day = t.days.find(x => String(x.n) === n); if (day) merge(day, d); else if (d.date) t.days.push({ n: +n, ...d }); }
+  t.days.sort((a, b) => a.n - b.n);
   return t;
 }
 async function tryCode(code, quiet) {
@@ -1800,8 +1803,8 @@ function renderTimeline() {
   tl.innerHTML = `<button class="tl-nav" type="button" data-dstep="-1" aria-label="${L.prevDay}" title="${L.prevDay}">${ic('prev', 'flip')}</button><div class="tl-days">` +
     T.days.map(d => {
       const { m, d: dd } = parseDay(d.date);
-      const big = d.n === 0 ? d.date.slice(8, 10) + '.' + pad2(m) : pad2(d.n);
-      const small = d.n === 0 ? L.depart : `${dd}.${m}`;
+      const big = d.n === 0 || d.home ? d.date.slice(8, 10) + '.' + pad2(m) : pad2(d.n);
+      const small = d.n === 0 ? L.depart : d.home ? L.home : `${dd}.${m}`;
       return `<button class="tl-day${d.date === today ? ' today' : ''}" role="tab" type="button" data-day="${d.n}" style="--area:${AREA[d.sun] || 'transparent'}" aria-label="${esc(d[lang].label + ' · ' + d[lang].title)}"><b>${esc(big)}</b><small>${esc(small)}</small></button>`;
     }).join('') + `</div><button class="tl-nav" type="button" data-dstep="1" aria-label="${L.nextDay}" title="${L.nextDay}">${ic('next', 'flip')}</button>`;
   markTimeline();
