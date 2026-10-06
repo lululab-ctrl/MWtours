@@ -21,6 +21,7 @@ const BUCKET = 'tour-photos';
 const vaultEl = document.getElementById('vault');
 let SLUG = null; try { SLUG = JSON.parse(vaultEl.textContent).slug; } catch (e) {}
 if (!SLUG) return;
+const AS = window.MW_AS || null;   // Matan looking at a traveler's view (read only), see viewas.js
 const KEY = 'mw-tour-' + SLUG, PARTS = ['check', 'field', 'seen'], ME = KEY + '-member', NAME = 'mw-tour-name';
 
 // ---------- storage helpers (raw, so our own writes don't trigger a save) ----------
@@ -42,12 +43,12 @@ const T = {
         many: 'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.', nameHint: 'באותו קוד ושם תוכלו להיכנס מכל טלפון או מחשב.',
         photos: 'תמונות הקבוצה', add: 'הוספת תמונה', adding: 'מעלים…', none: 'עדיין אין תמונות. אולי שלכם תהיה הראשונה?', you: 'אתם',
         del: 'מחיקה', delQ: 'למחוק את התמונה?', close: 'סגירה', prev: 'הקודמת', next: 'הבאה', failed: 'ההעלאה לא הצליחה. נסו שוב כשיש קליטה.',
-        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', yours: 'הצילום שלכם', others: 'צילומים של אחרים', othersN: n => n === 1 ? 'צילום 1' : `${n} צילומים`, replace: 'החלפה', replaced: 'הצילום שלכם הוחלף', codeChanged: 'קוד המסע השתנה. צאו והיכנסו שוב עם הקוד החדש.', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
+        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', yours: 'הצילום שלכם', others: 'צילומים של אחרים', othersN: n => n === 1 ? 'צילום 1' : `${n} צילומים`, replace: 'החלפה', replaced: 'הצילום שלכם הוחלף', codeChanged: 'קוד המסע השתנה. צאו והיכנסו שוב עם הקוד החדש.', asView: n => `צפייה בתור ${n} · קריאה בלבד`, asClose: 'סגירה', asLoading: 'טוענים את התצוגה של המטייל…', asSignIn: 'התחברו קודם לעמוד הניהול באותו דפדפן.', asMissing: 'המטייל הזה כבר לא במסע.', asFail: 'לא הצלחנו לטעון את התצוגה.', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
   en: { name: 'Name', namePh: 'Name', needName: 'Type your name.', notListed: "That name isn't on this expedition's traveler list. Type it the way Matan has it.", ambiguous: 'More than one traveler has that name. Add your last name too.', again: 'Please enter your name and the code again.', newCode: 'The expedition code has changed. Enter your name and the new code.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
         many: 'Too many tries. Please wait a few minutes.', nameHint: 'With the same code and name you can open it on any phone or computer.',
         photos: 'Group photos', add: 'Add photo', adding: 'Uploading…', none: 'No photos yet. Yours could be the first.', you: 'You',
         del: 'Delete', delQ: 'Delete this photo?', close: 'Close', prev: 'Previous', next: 'Next', failed: "The upload didn't work. Try again when you have signal.",
-        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', yours: 'Your shot', others: 'Others’ shots', othersN: n => n === 1 ? '1 shot' : `${n} shots`, replace: 'Replace', replaced: 'Your shot was replaced', codeChanged: 'The expedition code has changed. Switch expedition and enter the new code.', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap + to add a photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
+        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', yours: 'Your shot', others: 'Others’ shots', othersN: n => n === 1 ? '1 shot' : `${n} shots`, replace: 'Replace', replaced: 'Your shot was replaced', codeChanged: 'The expedition code has changed. Switch expedition and enter the new code.', asView: n => `Viewing as ${n} · read only`, asClose: 'Close', asLoading: 'Loading the traveler’s view…', asSignIn: 'Sign in to the admin page in this browser first.', asMissing: 'This traveler is no longer on the expedition.', asFail: 'Couldn’t load the traveler’s view.', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap + to add a photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
 };
 const W = () => T[(document.documentElement.lang || 'he').startsWith('en') ? 'en' : 'he'];
 
@@ -58,7 +59,7 @@ function ready() {
   readyP = new Promise((res, rej) => {
     const go = () => {
       try {
-        sb = window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'mw-tours-session' } });
+        sb = window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: AS ? 'mw-admin-session' : 'mw-tours-session' } });
         res(sb);
       } catch (e) { rej(e); }
     };
@@ -105,13 +106,13 @@ function applyState(state) {
 }
 let saveT = 0;
 async function save() {
-  if (!member) return;
+  if (!member || AS) return;
   try { await session(); await rpc('save_progress', { p_slug: SLUG, p_state: collect() }); } catch (e) {}
 }
 // the page saves through localStorage: notice its own lists changing
 Storage.prototype.setItem = function (k, v) {
   raw.set.call(this, k, v);
-  if (this === localStorage && member && typeof k === 'string' && k.startsWith(KEY + '-') && PARTS.includes(k.slice(KEY.length + 1))) {
+  if (this === localStorage && member && !AS && typeof k === 'string' && k.startsWith(KEY + '-') && PARTS.includes(k.slice(KEY.length + 1))) {
     clearTimeout(saveT); saveT = setTimeout(save, 1200);
   }
 };
@@ -297,9 +298,10 @@ function overlay(tile) {
   const it = itemOf(tile), list = (member || viewer) ? forItem(it) : [], w = W();
   const mine = member && list.find(p => p.member_id === member.id), others = list.filter(p => p !== mine);
   const stack = others.slice(-3).reverse().map(p => `<i style="background-image:url('${esc(url(thumbOf(p.path)))}')"></i>`).join('');
+  const yours = AS ? member.name.split(' ')[0] : w.yours;
   const top = mine
-    ? `<button type="button" class="mwp-mine" data-mwp-mine aria-label="${esc(w.yours)}" title="${esc(w.yours)}" style="background-image:url('${esc(url(thumbOf(mine.path)))}')"><span>${esc(w.yours)}</span></button>`
-    : `<button type="button" class="mwp-plus" data-mwp-add aria-label="${esc(w.add)}" title="${esc(w.add)}"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>`;
+    ? `<button type="button" class="mwp-mine" data-mwp-mine aria-label="${esc(yours)}" title="${esc(yours)}" style="background-image:url('${esc(url(thumbOf(mine.path)))}')"><span>${esc(yours)}</span></button>`
+    : AS ? '' : `<button type="button" class="mwp-plus" data-mwp-add aria-label="${esc(w.add)}" title="${esc(w.add)}"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>`;
   return top + (others.length ? `<button type="button" class="mwp-stack" data-mwp-others aria-label="${esc(w.others + ': ' + others.length)}" title="${esc(w.others)}">${stack}<b>${esc(w.othersN(others.length))}</b></button>` : '');
 }
 function decorate(refresh) {
@@ -371,8 +373,8 @@ function showShots(tile, list, mine) {
     if (!url(p.path)) { try { await sign([p.path]); } catch (e) {} }   // full size only now
     const when = new Date(p.created_at).toLocaleDateString(document.documentElement.lang || 'he', { day: 'numeric', month: 'short' });
     v.innerHTML = `<figure><img src="${esc(url(p.path) || url(thumbOf(p.path)))}" alt="${esc(title)}"></figure>
-      <div class="mwp-bar"><div><b>${esc(title)}</b><small>${esc(mine ? w.you : whoOf(p))} · ${esc(when)}${list.length > 1 ? ' · ' + esc(w.of(i + 1, list.length)) : ''}</small></div>
-      ${mine ? `<button type="button" class="mwp-rep">${esc(w.replace)}</button><button type="button" class="mwp-del">${esc(w.del)}</button>` : ''}</div>
+      <div class="mwp-bar"><div><b>${esc(title)}</b><small>${esc(mine ? (AS ? member.name : w.you) : whoOf(p))} · ${esc(when)}${list.length > 1 ? ' · ' + esc(w.of(i + 1, list.length)) : ''}</small></div>
+      ${mine && !AS ? `<button type="button" class="mwp-rep">${esc(w.replace)}</button><button type="button" class="mwp-del">${esc(w.del)}</button>` : ''}</div>
       <button type="button" class="mwp-x" aria-label="${esc(w.close)}">×</button>
       ${list.length > 1 ? `<button type="button" class="mwp-nav p" aria-label="${esc(w.prev)}">‹</button><button type="button" class="mwp-nav n" aria-label="${esc(w.next)}">›</button>` : ''}`;
     v.querySelector('.mwp-x').onclick = close;
@@ -482,6 +484,10 @@ const css = `
 [dir=rtl] .mwp-mine span{transform:translateX(-50%)}
 .mwp-ov.busy .mwp-mine{opacity:.5}
 .mwp-rep{min-height:38px;padding-inline:16px;border-radius:64px;border:1px solid rgba(244,175,86,.6);background:none;color:#F4AF56;font:700 13px "Google Sans",sans-serif;cursor:pointer}
+.mw-as{position:fixed;z-index:60;inset-inline:0;bottom:calc(84px + env(safe-area-inset-bottom));margin:0 auto;width:max-content;max-width:calc(100% - 32px);display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;border-radius:64px;background:rgba(10,9,8,.86);border:1px solid #F4AF56;color:#FEFBF1;font:600 13px/1.3 "Google Sans",sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+[dir=rtl] .mw-as{padding:8px 16px 8px 8px}
+.mw-as.warn{border-color:#F08A7A}
+.mw-as a{flex:none;padding:6px 14px;border-radius:64px;background:#F4AF56;color:#0A0908;text-decoration:none;font-weight:700}
 .mwp-stack{position:absolute;bottom:10px;inset-inline-start:10px;display:flex;align-items:center;gap:0;padding:4px 10px 4px 4px;border-radius:64px;border:1px solid rgba(254,251,241,.28);background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#FEFBF1;cursor:pointer;font:700 13px/1 "Google Sans",sans-serif}
 [dir=rtl] .mwp-stack{padding:4px 4px 4px 10px}
 .mwp-stack i{width:28px;height:28px;border-radius:50%;border:2px solid #14120F;background:#26221D center/cover no-repeat;margin-inline-start:-9px}
@@ -519,9 +525,39 @@ function relabel() {
   { const w = W(), l = $('#mw-name-l'), i = $('#mw-name'); if (l) l.textContent = w.name; if (i) i.placeholder = w.namePh; }
   decorate(true);
 }
+// ---------- Matan: a traveler's view, read only ----------
+function asBar(text, ok) {
+  let b = $('.mw-as'); const w = W();
+  if (!b) { b = document.createElement('div'); b.className = 'mw-as'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
+  b.innerHTML = `<span>${esc(text)}</span><a href="../admin/">${esc(w.asClose)}</a>`; b.classList.toggle('warn', !ok);
+}
+async function asView() {
+  const w = W(); asBar(w.asLoading, true);
+  try {
+    await timeout(ready(), 9000);
+    const { data } = await sb.auth.getSession();
+    if (!data.session || data.session.user.is_anonymous) return asBar(w.asSignIn);
+    const r = await timeout(rpc('admin_view_member', { p_member: AS }), 9000);
+    if (!r || r.tour_slug !== SLUG) return asBar(w.asMissing);
+    member = { id: AS, name: r.name }; viewer = true;
+    let changed = norm(ls.get(KEY + '-code')) !== norm(r.secret);
+    ls.set(KEY + '-code', norm(r.secret));
+    for (const p of PARTS) { const v = r.state && r.state[p] != null ? String(r.state[p]) : null; if (v !== ls.get(KEY + '-' + p) && v != null) { ls.set(KEY + '-' + p, v); changed = true; } }
+    const show = () => asBar(W().asView(member.name), true);
+    show(); new MutationObserver(show).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+    if (changed && reopen()) return;                // the page reads the lists when it opens
+    const field = $('#field');
+    if (field) {
+      new MutationObserver(() => { clearTimeout(decoT); decoT = setTimeout(() => decorate(false), 60); }).observe(field, { childList: true, subtree: true });
+      new MutationObserver(() => { if (!field.hidden) { decorate(false); loadPhotos(); } else live(); }).observe(field, { attributes: true, attributeFilter: ['hidden'] });
+    }
+    decorate(true); loadPhotos();
+  } catch (e) { asBar(w.asFail); }
+}
 function boot() {
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   document.body.appendChild(picker);
+  if (AS) return asView();
   mountGate();
   // the contour lines behind the code screen cover its whole height, also when it has to scroll
   const gate = $('#gate');

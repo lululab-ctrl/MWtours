@@ -454,6 +454,26 @@ end $$;
 revoke execute on function public.name_words(text), public.admin_add_travelers(text, text[]), public.admin_remove_traveler(uuid) from public, anon;
 grant execute on function public.admin_add_travelers(text, text[]), public.admin_remove_traveler(uuid) to authenticated;
 
+-- ---------------------------------------------------------------------
+-- 9. MATAN OPENS A TRAVELER'S VIEW (read only)
+-- ---------------------------------------------------------------------
+
+create or replace function public.admin_view_member(p_member uuid) returns json
+language plpgsql stable security definer set search_path = public as $$
+declare m public.members; t public.tours; v_state jsonb;
+begin
+  if not public.is_tour_admin() then raise exception 'not_admin'; end if;
+  select * into m from public.members where id = p_member;
+  if not found then return null; end if;
+  select * into t from public.tours where slug = m.tour_slug;
+  select state into v_state from public.progress where member_id = m.id;
+  return json_build_object('member_id', m.id, 'name', m.name, 'tour_slug', m.tour_slug,
+                           'secret', t.content_secret, 'state', coalesce(v_state, '{}'::jsonb));
+end $$;
+
+revoke execute on function public.admin_view_member(uuid) from public, anon;
+grant execute on function public.admin_view_member(uuid) to authenticated;
+
 -- =====================================================================
 -- DASHBOARD STEPS (do these first)
 -- =====================================================================

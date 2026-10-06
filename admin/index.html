@@ -71,6 +71,8 @@ textarea{width:100%;min-height:96px;padding:12px 16px;border-radius:14px;border:
 textarea:focus{outline:none;border-color:var(--gold)}
 .add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
 @media (max-width:640px){.add{grid-template-columns:1fr}}
+.who{color:var(--paper);font-weight:700;text-decoration:underline;text-decoration-color:rgba(244,175,86,.6);text-underline-offset:3px}
+.who:hover{color:var(--gold)}
 .st{font:600 10.5px/1 var(--label);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
 .st.in{color:var(--leaf)} .st.wait{color:var(--faint)} .st.extra{color:var(--amber)}
 .zoom{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(5,5,4,.92);cursor:zoom-out}
@@ -181,9 +183,9 @@ function render(photos) {
       <h3>Travelers · ${trav.length}</h3>
       ${ready ? `<div class="add"><label>Add travelers' full names, one per line<textarea data-names spellcheck="false" placeholder="Dana Levi&#10;Maria Santos"></textarea></label>
           <button class="btn" type="button" data-addnames>Add</button></div>
-        <p class="hint">${trav.length ? 'Only these travelers can join. They type their first, middle or last name (or all of them), then the code.' : 'While the list is empty, anyone with the code can join.'}</p>` : ''}
+        <p class="hint">${trav.length ? 'Only these travelers can join. They type their first, middle or last name (or all of them), then the code. Tap a name to see that traveler's view.' : 'While the list is empty, anyone with the code can join. Tap a name to see that traveler\'s view.'}</p>` : ''}
       ${rows.length ? `<div class="tbl"><table><thead><tr><th>Name</th><th>Status</th><th>Last active</th><th>Photos</th><th></th></tr></thead><tbody>
-        ${rows.map(x => `<tr><td><b>${esc(x.name)}</b></td>
+        ${rows.map(x => `<tr><td>${x.m ? `<a class="who" href="../${esc(t.path)}?as=${esc(x.m.id)}" target="_blank" rel="noopener" title="Open ${esc(x.name)}'s view">${esc(x.name)}</a>` : `<b>${esc(x.name)}</b>`}</td>
           <td><span class="st ${x.m ? (x.t ? 'in' : 'extra') : 'wait'}">${x.m ? (x.t ? 'Joined' : 'Not on list') : 'Not joined yet'}</span></td>
           <td>${x.m ? fmt(x.m.last_seen) : '–'}</td><td>${x.m ? x.m.photos : '–'}</td>
           <td><button class="btn danger small" type="button" ${x.t ? `data-rmt="${esc(x.t.id)}"` : `data-rm="${esc(x.m.id)}"`} data-name="${esc(x.name)}">Remove</button></td></tr>`).join('')}
