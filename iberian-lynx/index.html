@@ -955,7 +955,7 @@ async function decrypt(code) {
   return JSON.parse(new TextDecoder().decode(buf));
 }
 // a traveler's own version of the trip (their flights, their return): T.personal = [{ names: [...], patch: {...} }].
-// The signed-in name must contain every word of one of the names. A patch merges into the trip:
+// The signed-in name and one of the names must share all the words of the shorter one. A patch merges into the trip:
 // objects merge, arrays and plain values replace, null removes, and "days" is keyed by day number.
 function personalize(t) {
   const P = t && t.personal; if (!Array.isArray(P) || !P.length) return t;
@@ -963,7 +963,9 @@ function personalize(t) {
   const words = s => String(s || '').toLowerCase().split(/[\s,.\-–_]+/).filter(Boolean);
   const mine = words(me && me.name);
   if (!mine.length) { document.documentElement.dataset.personal = 'no'; return t; }
-  const hit = P.find(p => (p.names || []).some(n => { const w = words(n); return w.length && w.every(x => mine.includes(x)); }));
+  // a name matches when one holds all the words of the other: "Hadar", "Hadar Manor" and "Hadar Ruth Manor" all find "Hadar Manor"
+  const holds = (a, b) => b.every(x => a.includes(x));
+  const hit = P.find(p => (p.names || []).some(n => { const w = words(n); return w.length && (holds(mine, w) || holds(w, mine)); }));
   document.documentElement.dataset.personal = hit ? 'yes' : 'no';
   if (!hit) return t;
   const obj = x => x && typeof x === 'object' && !Array.isArray(x);
