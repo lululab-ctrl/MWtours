@@ -299,12 +299,24 @@ document.addEventListener('visibilitychange', () => {
 function overlay(tile) {
   const it = itemOf(tile), list = (member || viewer) ? forItem(it) : [], w = W();
   const mine = member && list.find(p => p.member_id === member.id), others = list.filter(p => p !== mine);
-  const stack = others.slice(-3).reverse().map(p => `<i style="background-image:url('${esc(url(thumbOf(p.path)))}')"></i>`).join('');
   const yours = AS ? member.name.split(' ')[0] : w.yours;
-  const top = mine
-    ? `<button type="button" class="mwp-mine" data-mwp-mine aria-label="${esc(yours)}" title="${esc(yours)}" style="background-image:url('${esc(url(thumbOf(mine.path)))}')"><span>${esc(yours)}</span></button>`
-    : AS ? '' : `<button type="button" class="mwp-plus" data-mwp-add aria-label="${esc(w.add)}" title="${esc(w.add)}"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>`;
-  return top + (others.length ? `<button type="button" class="mwp-stack" data-mwp-others aria-label="${esc(w.others + ': ' + others.length)}" title="${esc(w.others)}">${stack}<b>${esc(w.othersN(others.length))}</b></button>` : '');
+  // your shot fills the picture (full size, kept on the device); the others' shots sit on it as small circles
+  let top = '';
+  if (mine) {
+    const big = url(mine.path); if (!big) wantFull.add(mine.path);
+    top = `<button type="button" class="mwp-mine" data-mwp-mine aria-label="${esc(yours)}" title="${esc(yours)}" style="background-image:url('${esc(big || url(thumbOf(mine.path)))}')"><span>${esc(yours)}</span></button>`;
+  } else if (!AS) {
+    top = `<button type="button" class="mwp-plus" data-mwp-add aria-label="${esc(w.add)}" title="${esc(w.add)}"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>`;
+  }
+  const circles = others.slice(-3).reverse().map(p => `<i style="background-image:url('${esc(url(thumbOf(p.path)))}')"></i>`).join('');
+  return top + (others.length ? `<button type="button" class="mwp-stack${mine || AS ? ' up' : ''}" data-mwp-others aria-label="${esc(w.others + ': ' + others.length)}" title="${esc(w.others + ' · ' + w.othersN(others.length))}">${circles}${others.length > 3 ? `<b>+${others.length - 3}</b>` : ''}</button>` : '');
+}
+// your own shots at full size, fetched once and then served from the browser's cache
+const wantFull = new Set(); let fullT = 0;
+function fetchFull() {
+  if (!wantFull.size || !sb) return;
+  const need = [...wantFull]; wantFull.clear();
+  clearTimeout(fullT); fullT = setTimeout(async () => { try { await sign(need); decorate(true); } catch (e) {} }, 50);
 }
 function decorate(refresh) {
   document.querySelectorAll('#field .ftile[id^="fa-"], #field .ftile[id^="fx-"]').forEach(tile => {
@@ -315,6 +327,7 @@ function decorate(refresh) {
     if (o.dataset.busy) return;
     o.innerHTML = overlay(tile);
   });
+  fetchFull();
 }
 
 // make a phone photo light enough to send from the field: 1280 px long side, and a 320 px thumbnail
@@ -474,27 +487,26 @@ const css = `
 .mwp-go:disabled{opacity:.55}
 .mwp-card .mwp-x{top:10px}
 .mwp-msg{min-height:1.3em;color:#F4AF56!important;font-size:14px!important}
-.mwp-ov{position:absolute;inset:0;pointer-events:none;z-index:2}
+.mwp-ov{position:absolute;inset:0;pointer-events:none;z-index:2;border-radius:inherit}
 .mwp-ov>*{pointer-events:auto}
 .mwp-plus{position:absolute;top:10px;inset-inline-end:10px;width:40px;height:40px;padding:0;border-radius:50%;border:1px solid rgba(244,175,86,.75);background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#F4AF56;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:transform .25s,background-color .25s}
 .mwp-plus:hover{transform:scale(1.08);background:rgba(10,9,8,.8)}
 .mwp-plus svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .mwp-ov.busy .mwp-plus svg{animation:mwpSpin .9s linear infinite}
 @keyframes mwpSpin{to{transform:rotate(360deg)}}
-.mwp-mine{position:absolute;top:10px;inset-inline-end:10px;width:44px;height:44px;padding:0;border-radius:50%;border:2px solid #F4AF56;background:#26221D center/cover no-repeat;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)}
-.mwp-mine span{position:absolute;top:calc(100% + 4px);inset-inline-end:50%;transform:translateX(50%);padding:2px 7px;border-radius:64px;background:rgba(10,9,8,.75);color:#FEFBF1;font:600 10.5px/1.4 "Google Sans",sans-serif;white-space:nowrap}
-[dir=rtl] .mwp-mine span{transform:translateX(-50%)}
+.mwp-mine{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:inherit;background:#26221D center/cover no-repeat;cursor:zoom-in}
+.mwp-mine span{position:absolute;top:10px;inset-inline-start:10px;padding:3px 9px;border-radius:64px;background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#FEFBF1;font:600 11px/1.4 "Google Sans",sans-serif;white-space:nowrap}
 .mwp-ov.busy .mwp-mine{opacity:.5}
 .mwp-rep{min-height:38px;padding-inline:16px;border-radius:64px;border:1px solid rgba(244,175,86,.6);background:none;color:#F4AF56;font:700 13px "Google Sans",sans-serif;cursor:pointer}
 .mw-as{position:fixed;z-index:60;inset-inline:0;bottom:calc(84px + env(safe-area-inset-bottom));margin:0 auto;width:max-content;max-width:calc(100% - 32px);display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;border-radius:64px;background:rgba(10,9,8,.86);border:1px solid #F4AF56;color:#FEFBF1;font:600 13px/1.3 "Google Sans",sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 [dir=rtl] .mw-as{padding:8px 16px 8px 8px}
 .mw-as.warn{border-color:#F08A7A}
 .mw-as a{flex:none;padding:6px 14px;border-radius:64px;background:#F4AF56;color:#0A0908;text-decoration:none;font-weight:700}
-.mwp-stack{position:absolute;bottom:10px;inset-inline-start:10px;display:flex;align-items:center;gap:0;padding:4px 10px 4px 4px;border-radius:64px;border:1px solid rgba(254,251,241,.28);background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#FEFBF1;cursor:pointer;font:700 13px/1 "Google Sans",sans-serif}
-[dir=rtl] .mwp-stack{padding:4px 4px 4px 10px}
-.mwp-stack i{width:28px;height:28px;border-radius:50%;border:2px solid #14120F;background:#26221D center/cover no-repeat;margin-inline-start:-9px}
+.mwp-stack{position:absolute;bottom:10px;inset-inline-end:10px;display:flex;align-items:center;padding:0;border:0;background:none;color:#FEFBF1;cursor:pointer;font:700 12px/1 "Google Sans",sans-serif}
+.mwp-stack.up{bottom:auto;top:10px}
+.mwp-stack i,.mwp-stack b{width:36px;height:36px;border-radius:50%;border:2px solid rgba(254,251,241,.9);background:#26221D center/cover no-repeat;margin-inline-start:-10px;box-shadow:0 3px 10px rgba(0,0,0,.4)}
 .mwp-stack i:first-child{margin-inline-start:0}
-.mwp-stack b{margin-inline-start:7px}
+.mwp-stack b{display:grid;place-items:center;background:rgba(10,9,8,.75)}
 .mwp{display:grid;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid rgba(254,251,241,.12)}
 .mwp-h{display:flex;align-items:center;gap:8px;font:600 11px/1 Montserrat,"Google Sans",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#E4AA7C}
 [dir=rtl] .mwp-h{font:600 13px/1 "Google Sans",sans-serif;letter-spacing:0}
