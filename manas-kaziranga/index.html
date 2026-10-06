@@ -482,9 +482,14 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .roles span{font-size:14.5px;color:#3B5168}
 .bioband{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:40px;align-items:start;max-width:1000px}
 .bioband .ph{aspect-ratio:4/5;border-radius:18px;box-shadow:0 24px 60px rgba(30,51,78,.28)}
+/* with a story: one text column (bio, then the story) beside one photo that stays in view */
+.bioband.has-story{grid-template-areas:"bio ph" "story ph";row-gap:0}
+.bioband.has-story .bio{grid-area:bio}
+.bioband.has-story .ph{grid-area:ph;position:sticky;top:-24px}
+.bioband.has-story .lstory{grid-area:story;margin-top:36px;padding-top:32px;border-top:1px solid rgba(30,51,78,.16);max-width:62ch}
 .bio{display:grid;gap:14px;max-width:62ch}
 .bio p{margin:0;font-size:17px;line-height:1.7;color:#22384F}
-.lstory{display:grid;gap:14px;max-width:68ch}
+.lstory{display:grid;gap:14px}
 .lstory .lbl{margin:0}
 .lstory h3{margin:0;font-size:clamp(24px,4vw,30px);line-height:1.2;color:var(--bark)}
 .lstory .by{margin:0;font-size:14px;color:#3B5168}
@@ -650,7 +655,10 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
   @keyframes sheetIn{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:none}}
   .daycard{width:100%;max-height:38vh}
 }
-@media (max-width:560px){.wx{grid-template-columns:1fr;gap:12px}.wx svg{max-width:300px}.lead{grid-template-columns:1fr;justify-items:start;gap:18px;padding:20px}.face{width:96px;height:96px;padding:4px}.fact{align-items:flex-start}.fact .ring{width:36px;height:36px}.fact span{font-size:15.5px}.bioband{grid-template-columns:1fr;gap:28px}.bioband .ph{max-width:420px}}
+@media (max-width:560px){.wx{grid-template-columns:1fr;gap:12px}.wx svg{max-width:300px}.lead{grid-template-columns:1fr;justify-items:start;gap:18px;padding:20px}.face{width:96px;height:96px;padding:4px}.fact{align-items:flex-start}.fact .ring{width:36px;height:36px}.fact span{font-size:15.5px}.bioband{grid-template-columns:1fr;gap:28px}
+  .bioband.has-story{grid-template-areas:"bio" "ph" "story";row-gap:28px}
+  .bioband.has-story .ph{position:static}
+  .bioband.has-story .lstory{margin-top:8px}.bioband .ph{max-width:420px}}
 @media (max-width:420px){.fl{grid-template-columns:52px 60px minmax(0,1fr)}.fl .no{grid-column:2 / -1;text-align:start}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.jc{opacity:1}}
 </style>
@@ -2208,8 +2216,8 @@ function renderLeader() {
     <header class="rh" style="--i:0"><p class="lbl">${esc(l.kicker)}</p></header>
     <div class="lead" style="--i:1"><div class="face">${face}</div><div><h2 class="tt ink"><span>${esc(first)}</span> <b>${esc(rest.join(' '))}</b></h2><p class="role">${esc(ld.role[lang])}</p></div></div>
     <div class="roles" style="--i:2">${ld.roles.map(r => `<div><b>${esc(r[lang][0])}</b><span>${esc(r[lang][1])}</span></div>`).join('')}</div>
-    <div class="bioband" style="--i:3"><div class="bio">${ld.bio[lang].map(p => `<p>${esc(p)}</p>`).join('')}</div>${band}</div>
-    ${ld.story && ld.story[lang] ? `<article class="lstory" style="--i:4"><p class="lbl">${esc(ld.story[lang].kicker || '')}</p>${ld.story[lang].title ? `<h3>${esc(ld.story[lang].title)}</h3>` : ''}${ld.story[lang].by ? `<p class="by">${esc(ld.story[lang].by)}</p>` : ''}${ld.story[lang].text.map(t => `<p class="t">${esc(t)}</p>`).join('')}</article>` : ''}
+    <div class="bioband${ld.story && ld.story[lang] ? ' has-story' : ''}" style="--i:3"><div class="bio">${ld.bio[lang].map(p => `<p>${esc(p)}</p>`).join('')}</div>${band}
+    ${ld.story && ld.story[lang] ? `<article class="lstory"><p class="lbl">${esc(ld.story[lang].kicker || '')}</p>${ld.story[lang].title ? `<h3>${esc(ld.story[lang].title)}</h3>` : ''}${ld.story[lang].by ? `<p class="by">${esc(ld.story[lang].by)}</p>` : ''}${ld.story[lang].text.map(t => `<p class="t">${esc(t)}</p>`).join('')}</article>` : ''}</div>
     <section class="contact" style="--i:4"><h3 style="margin:0;font-size:24px;color:var(--bark)">${esc(l.contact)}</h3>
       <div class="acts"><a class="btn wa" href="${wa}" target="_blank" rel="noopener">${ic('wa')}<span>${esc(l.wa)}</span></a>
         <a class="btn" href="${esc(ld.instagram)}" target="_blank" rel="noopener">${ic('ig')}<span>${esc(l.ig)}</span></a></div>
