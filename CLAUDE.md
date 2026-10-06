@@ -24,6 +24,7 @@ commit finished work straight to `main`; there is no build step.
 ## Rules
 - Keep all three tours on the same interface: a UI change to one tour goes into the others too
   (only the vault, the map data and the photos differ between them).
+- The Flights block never shows a photo beside it (even if the vault has one); keep it that way in new tours.
 - A new expedition: copy an existing tour folder as the template, give it its own vault/maps/photos,
   add it to `tours.json` with its `slug`, then Matan connects it once in `/admin`.
 - Pages are Hebrew-first with English; check both and phone width before pushing.
