@@ -125,14 +125,63 @@ function reopen() {
   sessionStorage.setItem(flag, String(Date.now())); location.reload(); return true;
 }
 
-// ---------- the code screen ----------
-// Only the code, handled by the page itself. The name is asked once, when the traveler first adds a photo.
+// The traveler's name comes first: it is how each traveler is known (and later, their own route).
+// ---------- the code screen: code + name ----------
+let bypass = false;
+function mountGate() {
+  const form = $('#gate-form'), code = $('#code');
+  if (!form || !code || $('#mw-name')) return;
+  const w = W();
+  const lab = document.createElement('label'); lab.htmlFor = 'mw-name'; lab.id = 'mw-name-l'; lab.textContent = w.name;
+  const inp = document.createElement('input');
+  Object.assign(inp, { id: 'mw-name', name: 'name', type: 'text', autocomplete: 'name', spellcheck: false, placeholder: w.namePh, value: ls.get(NAME) || '' });
+  inp.setAttribute('autocapitalize', 'words'); inp.className = 'mw-name';
+  const first = form.querySelector('label[for="code"]');
+  form.insertBefore(inp, first); form.insertBefore(lab, inp);
+
+  form.addEventListener('submit', async e => {
+    if (bypass) { bypass = false; return; }               // let the page open it with the key
+    e.preventDefault(); e.stopImmediatePropagation();
+    const err = $('#gate-err'), btn = $('#gate-btn'), label = btn.firstElementChild, w = W();
+    const local = () => { const n = inp.value.trim(); if (n) ls.set(NAME, n); bypass = true; form.requestSubmit(); };   // no Supabase: the page tries the code itself
+    if (!norm(code.value)) return local();
+    const name = inp.value.trim().replace(/\s+/g, ' ');
+    if (!name) { err.textContent = w.needName; inp.focus(); return; }
+    btn.disabled = true; const was = label.textContent; label.textContent = w.busy; err.textContent = '';
+    try {
+      await timeout(session(), 9000);
+      const r = await timeout(rpc('join_tour', { p_slug: SLUG, p_code: code.value, p_name: name }), 9000);
+      if (r && r.error) {
+        btn.disabled = false; label.textContent = was;
+        if (r.error === 'tour_not_ready') return local();
+        err.textContent = r.error === 'too_many_attempts' ? w.many : r.error === 'bad_name' ? w.needName : w.wrong;
+        form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); code.select();
+        return;
+      }
+      ls.set(NAME, name);
+      member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member)); viewer = true;
+      applyState(r.state);
+      ls.set(KEY + '-code', norm(r.secret));
+      await save();
+      sessionStorage.removeItem('mw-reopen-' + SLUG);
+      if (!reopen()) { code.value = r.secret; local(); }
+    } catch (ex) {
+      btn.disabled = false; label.textContent = was;
+      local();
+    }
+  }, true);
+}
+
 
 // already joined on this browser: open straight away and bring the latest lists
 async function resume() {
   try {
     await timeout(session(), 9000);
     const r = await timeout(rpc('resume_tour', { p_slug: SLUG }), 9000);
+    if (!r && ls.get(NAME) && ls.get(KEY + '-code')) {
+      const j = await rpc('join_tour', { p_slug: SLUG, p_code: ls.get(KEY + '-code'), p_name: ls.get(NAME) }).catch(() => null);
+      if (j && !j.error) { member = { id: j.member_id, name: j.name }; ls.set(ME, JSON.stringify(member)); viewer = true; save(); decorate(true); loadPhotos(); return; }
+    }
     if (!r) {
       if (member) { member = null; ls.set(ME, 'null'); }
       await viewWithCode();                     // not named yet: the code alone lets this browser see the group's shots
@@ -376,6 +425,9 @@ document.addEventListener('click', e => {
 
 // ---------- look ----------
 const css = `
+.gate-form .mw-name{width:100%;height:54px;border-radius:64px;border:1px solid rgba(254,251,241,.32);background:rgba(10,9,8,.45);text-align:center;font:600 17px/1 "Google Sans",Arial,sans-serif;letter-spacing:0;text-transform:none;color:#FEFBF1;transition:border-color .3s}
+.gate-form .mw-name::placeholder{color:rgba(254,251,241,.3);font-weight:400;letter-spacing:0;text-transform:none}
+.gate-form .mw-name:focus{outline:none;border-color:#F4AF56}
 /* the code screen: never wider than the window, and the contour lines stay behind it while it scrolls */
 #gate{overflow-x:hidden}
 #gate::before{height:var(--mw-gh,100%);bottom:auto}
@@ -441,11 +493,13 @@ const css = `
 
 // ---------- start ----------
 function relabel() {
+  { const w = W(), l = $('#mw-name-l'), i = $('#mw-name'); if (l) l.textContent = w.name; if (i) i.placeholder = w.namePh; }
   decorate(true);
 }
 function boot() {
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   document.body.appendChild(picker);
+  mountGate();
   // the contour lines behind the code screen cover its whole height, also when it has to scroll
   const gate = $('#gate');
   if (gate) { const fit = () => gate.style.setProperty('--mw-gh', gate.scrollHeight + 'px'); fit(); addEventListener('resize', fit); setTimeout(fit, 800); }
