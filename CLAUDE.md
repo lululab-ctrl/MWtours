@@ -14,7 +14,8 @@ commit finished work straight to `main`; there is no build step.
 - `assets/members.js`: loaded by every tour. Traveler name on the code screen, Supabase sync of lists and
   progress, group photo uploads on the Field cards. When you change it, bump `?v=` in the three tour pages.
 - `admin/`: Matan's admin (Supabase login): connect an expedition once with its code, see the code,
-  add the traveler list (a traveler joins with a name on it: first, middle or last name, then the code),
+  add the traveler list (only a name on it can join: first, middle or last name, then the code; an empty
+  list means no one can join; the first sign-in needs a connection, there is no code-only way in),
   shared photos. Tapping a joined traveler's name opens `<tour>/?as=<member id>`: that traveler's view,
   read only (`assets/viewas.js` keeps their lists in that tab so the admin's own are untouched).
 - `assets/`: favicon set (same as the MWP site), logo, contour image.

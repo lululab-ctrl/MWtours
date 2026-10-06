@@ -39,12 +39,12 @@ let member = null; try { member = JSON.parse(ls.get(ME) || 'null'); } catch (e) 
 
 // ---------- words ----------
 const T = {
-  he: { name: 'שם', namePh: 'שם', needName: 'הקלידו את השם שלכם.', notListed: 'השם הזה לא ברשימת המטיילים של המסע. כתבו אותו כמו שמתן רשם אותו.', ambiguous: 'יש יותר ממטייל אחד בשם הזה. הוסיפו גם את שם המשפחה.', again: 'הקלידו שוב את השם ואת הקוד.', newCode: 'קוד המסע השתנה. הקלידו את השם ואת הקוד החדש.', busy: 'פותחים…', wrong: 'הקוד לא תואם. בדקו אותו בהודעה ונסו שוב.',
+  he: { name: 'שם', namePh: 'שם', needName: 'הקלידו את השם שלכם.', notListed: 'השם הזה לא ברשימת המטיילים של המסע. כתבו אותו כמו שמתן רשם אותו.', ambiguous: 'יש יותר ממטייל אחד בשם הזה. הוסיפו גם את שם המשפחה.', again: 'הקלידו שוב את השם ואת הקוד.', needSignal: 'בכניסה הראשונה צריך חיבור לאינטרנט. נסו שוב כשיש קליטה.', notOpen: 'המסע הזה עוד לא נפתח למטיילים.', newCode: 'קוד המסע השתנה. הקלידו את השם ואת הקוד החדש.', busy: 'פותחים…', wrong: 'הקוד לא תואם. בדקו אותו בהודעה ונסו שוב.',
         many: 'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.', nameHint: 'באותו קוד ושם תוכלו להיכנס מכל טלפון או מחשב.',
         photos: 'תמונות הקבוצה', add: 'הוספת תמונה', adding: 'מעלים…', none: 'עדיין אין תמונות. אולי שלכם תהיה הראשונה?', you: 'אתם',
         del: 'מחיקה', delQ: 'למחוק את התמונה?', close: 'סגירה', prev: 'הקודמת', next: 'הבאה', failed: 'ההעלאה לא הצליחה. נסו שוב כשיש קליטה.',
         offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', yours: 'הצילום שלכם', others: 'צילומים של אחרים', othersN: n => n === 1 ? 'צילום 1' : `${n} צילומים`, replace: 'החלפה', replaced: 'הצילום שלכם הוחלף', codeChanged: 'קוד המסע השתנה. צאו והיכנסו שוב עם הקוד החדש.', asView: n => `צפייה בתור ${n} · קריאה בלבד`, asClose: 'סגירה', asLoading: 'טוענים את התצוגה של המטייל…', asSignIn: 'התחברו קודם לעמוד הניהול באותו דפדפן.', asMissing: 'המטייל הזה כבר לא במסע.', asFail: 'לא הצלחנו לטעון את התצוגה.', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
-  en: { name: 'Name', namePh: 'Name', needName: 'Type your name.', notListed: "That name isn't on this expedition's traveler list. Type it the way Matan has it.", ambiguous: 'More than one traveler has that name. Add your last name too.', again: 'Please enter your name and the code again.', newCode: 'The expedition code has changed. Enter your name and the new code.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
+  en: { name: 'Name', namePh: 'Name', needName: 'Type your name.', notListed: "That name isn't on this expedition's traveler list. Type it the way Matan has it.", ambiguous: 'More than one traveler has that name. Add your last name too.', again: 'Please enter your name and the code again.', needSignal: 'The first sign-in needs a connection. Try again when you have signal.', notOpen: 'This expedition isn’t open to travelers yet.', newCode: 'The expedition code has changed. Enter your name and the new code.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
         many: 'Too many tries. Please wait a few minutes.', nameHint: 'With the same code and name you can open it on any phone or computer.',
         photos: 'Group photos', add: 'Add photo', adding: 'Uploading…', none: 'No photos yet. Yours could be the first.', you: 'You',
         del: 'Delete', delQ: 'Delete this photo?', close: 'Close', prev: 'Previous', next: 'Next', failed: "The upload didn't work. Try again when you have signal.",
@@ -156,9 +156,8 @@ function mountGate() {
       const r = await timeout(rpc('join_tour', { p_slug: SLUG, p_code: code.value, p_name: name }), 9000);
       if (r && r.error) {
         btn.disabled = false; label.textContent = was;
-        if (r.error === 'tour_not_ready') return local();
         const nameErr = { bad_name: w.needName, name_not_listed: w.notListed, name_ambiguous: w.ambiguous }[r.error];
-        err.textContent = r.error === 'too_many_attempts' ? w.many : nameErr || w.wrong;
+        err.textContent = r.error === 'too_many_attempts' ? w.many : r.error === 'tour_not_ready' ? w.notOpen : nameErr || w.wrong;
         form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); (nameErr ? inp : code).select();
         return;
       }
@@ -170,8 +169,10 @@ function mountGate() {
       sessionStorage.removeItem('mw-reopen-' + SLUG);
       if (!reopen()) { code.value = r.secret; local(); }
     } catch (ex) {
+      // the name is checked on the server, so the first sign-in needs a connection
       btn.disabled = false; label.textContent = was;
-      local();
+      const why = String((ex && (ex.message || ex.error_description || ex.code)) || '').slice(0, 120);
+      err.textContent = !navigator.onLine ? w.needSignal : w.tryLater + (why && why !== 'timeout' ? ' (' + why + ')' : '');
     }
   }, true);
 }
@@ -192,11 +193,8 @@ async function resume() {
         if (applyState(j.state)) { await save(); return reopen(); }
         save(); decorate(true); loadPhotos(); return;
       }
-      const err = j && j.error;
-      if (err === 'name_not_listed') return relock('notListed');
-      if (err === 'name_ambiguous') return relock('ambiguous');
-      if (err === 'wrong_code') return relock('newCode');
-      if (!j) { const v = await rpc('view_tour', { p_slug: SLUG, p_code: code }); if (v && v.ok) return relock('again'); }
+      const why = { name_not_listed: 'notListed', name_ambiguous: 'ambiguous', wrong_code: 'newCode', tour_not_ready: 'notOpen', too_many_attempts: 'many' };
+      return relock(j ? why[j.error] || 'again' : 'again');
     }
     if (!r) {
       if (member) { member = null; ls.set(ME, 'null'); }
@@ -210,7 +208,11 @@ async function resume() {
     if (changed) return reopen();
     save();
     decorate(true); loadPhotos();
-  } catch (e) { decorate(false); /* offline: the page carries on with what this device has */ }
+  } catch (e) {
+    // a registered traveler carries on offline; a browser that was never registered goes back to the name + code screen
+    if (!member && navigator.onLine && ls.get(KEY + '-code')) return relock('again');
+    decorate(false);
+  }
 }
 // close the expedition on this browser and show the name + code screen (the traveler's lists stay on the device)
 function relock(why) {

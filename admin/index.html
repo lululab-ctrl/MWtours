@@ -204,7 +204,7 @@ function render(photos) {
       <h3>Travelers · ${trav.length}</h3>
       ${ready ? `<div class="add"><label>Add travelers' full names, one per line<textarea data-names spellcheck="false" placeholder="Dana Levi&#10;Maria Santos"></textarea></label>
           <button class="btn" type="button" data-addnames>Add</button></div>
-        <p class="hint">${trav.length ? 'Only these travelers can join. They type their first, middle or last name (or all of them), then the code. Tap a name to see that traveler’s view.' : 'While the list is empty, anyone with the code can join. Tap a name to see that traveler’s view.'}</p>` : ''}
+        <p class="hint">${trav.length ? 'Only these travelers can join. They type their first, middle or last name (or all of them), then the code. Tap a joined name to see that traveler’s view.' : 'No one can join until their name is on this list. They type their first, middle or last name (or all of them), then the code.'}</p>` : ''}
       ${rows.length ? `<div class="tbl"><table><thead><tr><th>Name</th><th>Status</th><th>Last active</th><th>Photos</th><th></th></tr></thead><tbody>
         ${rows.map(x => `<tr><td>${x.m ? `<a class="who" href="../${esc(t.path)}?as=${esc(x.m.id)}" target="_blank" rel="noopener" title="Open ${esc(x.name)}'s view">${esc(x.name)}</a>` : `<b>${esc(x.name)}</b>`}</td>
           <td><span class="st ${x.m ? (x.t ? 'in' : 'extra') : 'wait'}">${x.m ? (x.t ? 'Joined' : 'Not on list') : 'Not joined yet'}</span></td>
