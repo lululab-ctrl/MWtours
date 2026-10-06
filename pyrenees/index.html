@@ -2088,7 +2088,7 @@ function renderInfo() {
     const open = d.date === today;
     return `<div class="dday${open ? ' open' : ''}${d.date === today ? ' today' : ''}" style="--area:${AREA[d.sun] || 'transparent'}">
       <button class="drow" type="button" data-dayrow="${d.n}" aria-expanded="${open}">
-      <span class="n"><b>${pad2(d.n)}</b><small>${dd}.${m}</small></span><span><span class="h">${esc(c.title)}</span><span class="p">${esc(c.text)}</span></span>${ic('next')}</button>
+      <span class="n"><b>${d.home ? `${dd}.${m}` : pad2(d.n)}</b><small>${d.home ? esc(L.home) : `${dd}.${m}`}</small></span><span><span class="h">${esc(c.title)}</span><span class="p">${esc(c.text)}</span></span>${ic('next')}</button>
       <div class="dpanel"><div class="dpin">
         ${schedHTML(c.text)}
         <div class="rows">
