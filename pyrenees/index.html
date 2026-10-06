@@ -484,6 +484,11 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .bioband .ph{aspect-ratio:4/5;border-radius:18px;box-shadow:0 24px 60px rgba(30,51,78,.28)}
 .bio{display:grid;gap:14px;max-width:62ch}
 .bio p{margin:0;font-size:17px;line-height:1.7;color:#22384F}
+.lstory{display:grid;gap:14px;max-width:68ch}
+.lstory .lbl{margin:0}
+.lstory h3{margin:0;font-size:clamp(24px,4vw,30px);line-height:1.2;color:var(--bark)}
+.lstory .by{margin:0;font-size:14px;color:#3B5168}
+.lstory p.t{margin:0;font-size:17px;line-height:1.75;color:#22384F}
 .contact{display:grid;gap:16px;max-width:780px}
 .contact .acts{display:flex;flex-wrap:wrap;gap:10px}
 #leader .btn{color:#41352D;border-color:rgba(159,131,94,.55)}
@@ -2220,6 +2225,7 @@ function renderLeader() {
     <div class="lead" style="--i:1"><div class="face">${face}</div><div><h2 class="tt ink"><span>${esc(first)}</span> <b>${esc(rest.join(' '))}</b></h2><p class="role">${esc(ld.role[lang])}</p></div></div>
     <div class="roles" style="--i:2">${ld.roles.map(r => `<div><b>${esc(r[lang][0])}</b><span>${esc(r[lang][1])}</span></div>`).join('')}</div>
     <div class="bioband" style="--i:3"><div class="bio">${ld.bio[lang].map(p => `<p>${esc(p)}</p>`).join('')}</div>${band}</div>
+    ${ld.story && ld.story[lang] ? `<article class="lstory" style="--i:4"><p class="lbl">${esc(ld.story[lang].kicker || '')}</p>${ld.story[lang].title ? `<h3>${esc(ld.story[lang].title)}</h3>` : ''}${ld.story[lang].by ? `<p class="by">${esc(ld.story[lang].by)}</p>` : ''}${ld.story[lang].text.map(t => `<p class="t">${esc(t)}</p>`).join('')}</article>` : ''}
     <section class="contact" style="--i:4"><h3 style="margin:0;font-size:24px;color:var(--bark)">${esc(l.contact)}</h3>
       <div class="acts"><a class="btn wa" href="${wa}" target="_blank" rel="noopener">${ic('wa')}<span>${esc(l.wa)}</span></a>
         <a class="btn" href="${esc(ld.instagram)}" target="_blank" rel="noopener">${ic('ig')}<span>${esc(l.ig)}</span></a></div>
