@@ -35,7 +35,7 @@ commit finished work straight to `main`; there is no build step.
 - Per-traveler trip: the vault may hold `personal: [{names, patch}]`. The page applies the first entry whose
   name's words all appear in the signed-in traveler's name (from `mw-tour-<slug>-member`): the patch merges into
   the trip (objects merge, arrays/values replace, null removes, `days` keyed by day number). Manas & Kaziranga
-  uses it for each traveler's return flight; everyone there starts in Delhi.
+  uses it for each traveler's return flight from Guwahati; everyone flies Tel Aviv → Abu Dhabi → Delhi together.
 - Map days: each day has its own frame (`steps[].bbox`); days in a row with the same frame are spread automatically
   (`spreadDays`). A park day can carry `spot: {lonlat, he, en}`: a marked, labelled place shown on that day only.
 - The Flights block never shows a photo beside it (even if the vault has one); keep it that way in new tours.
