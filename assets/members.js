@@ -546,14 +546,19 @@ function asBar(text, ok) {
   if (!b) { b = document.createElement('div'); b.className = 'mw-as'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
   b.innerHTML = `<span>${esc(text)}</span><a href="../admin/">${esc(w.asClose)}</a>`; b.classList.toggle('warn', !ok);
 }
+// the traveler's view can't be opened: never leave an earlier view on screen as if it were theirs
+function asNone(text) {
+  asBar(text);
+  if (ls.get(KEY + '-code') || ls.get(ME)) { localStorage.removeItem(KEY + '-code'); localStorage.removeItem(ME); location.reload(); }
+}
 async function asView() {
   const w = W(); asBar(w.asLoading, true);
   try {
     await timeout(ready(), 9000);
     const { data } = await sb.auth.getSession();
-    if (!data.session || data.session.user.is_anonymous) return asBar(w.asSignIn);
+    if (!data.session || data.session.user.is_anonymous) return asNone(w.asSignIn);
     const r = await timeout(rpc('admin_view_member', { p_member: AS }), 9000);
-    if (!r || r.tour_slug !== SLUG) return asBar(w.asMissing);
+    if (!r || r.tour_slug !== SLUG) return asNone(w.asMissing);
     member = { id: r.member_id || 'not-joined', name: r.name }; viewer = true;   // not joined yet: a fresh view, no shots
     let changed = norm(ls.get(KEY + '-code')) !== norm(r.secret);
     if (ls.get(ME) !== JSON.stringify(member)) { ls.set(ME, JSON.stringify(member)); changed = true; }   // the page picks their own flights by name
@@ -570,7 +575,7 @@ async function asView() {
       new MutationObserver(() => { if (!field.hidden) { decorate(false); loadPhotos(); } else live(); }).observe(field, { attributes: true, attributeFilter: ['hidden'] });
     }
     decorate(true); loadPhotos();
-  } catch (e) { asBar(w.asFail); }
+  } catch (e) { asNone(w.asFail); }
 }
 function boot() {
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);

@@ -168,6 +168,11 @@ async function checkSetup(tours) {
   if (tours.length && !('travelers' in tours[0])) todo.push('<b>Run supabase-update-travelers.txt</b> in Supabase → SQL Editor (the traveler list).');
   const v = await sb.rpc('admin_view_member', { p_member: '00000000-0000-0000-0000-000000000000' });
   if (v.error && /function|schema cache/i.test(v.error.message)) todo.push('<b>Run supabase-update-view-as.txt</b> in Supabase → SQL Editor (opening a traveler\u2019s view).');
+  else {
+    // a name on the list that hasn't joined yet must open too (needs the newer update)
+    const tr = tours.flatMap(t => (t.travelers || []).filter(r => !(t.members || []).some(m => m.traveler_id === r.id)))[0];
+    if (tr) { const r = await sb.rpc('admin_view_member', { p_member: tr.id }); if (!r.error && !r.data) todo.push('<b>Run supabase-update-view-before-join.txt</b> in Supabase → SQL Editor, so tapping the name of a traveler who hasn\u2019t signed in yet opens their view.'); }
+  }
   const box = $('#setup');
   box.innerHTML = todo.length ? `<h3>Finish the setup</h3><ol>${todo.map(t => `<li>${t}</li>`).join('')}</ol><p class="hint">Then travelers who already opened an expedition are asked for their name and the code once more, and appear here.</p>` : '';
   box.hidden = !todo.length;
