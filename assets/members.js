@@ -42,12 +42,12 @@ const T = {
         many: 'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.', nameHint: 'באותו קוד ושם תוכלו להיכנס מכל טלפון או מחשב.',
         photos: 'תמונות הקבוצה', add: 'הוספת תמונה', adding: 'מעלים…', none: 'עדיין אין תמונות. אולי שלכם תהיה הראשונה?', you: 'אתם',
         del: 'מחיקה', delQ: 'למחוק את התמונה?', close: 'סגירה', prev: 'הקודמת', next: 'הבאה', failed: 'ההעלאה לא הצליחה. נסו שוב כשיש קליטה.',
-        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
+        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', yours: 'הצילום שלכם', others: 'צילומים של אחרים', othersN: n => n === 1 ? 'צילום 1' : `${n} צילומים`, replace: 'החלפה', replaced: 'הצילום שלכם הוחלף', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
   en: { name: 'Name', namePh: 'Name', needName: 'Type your name.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
         many: 'Too many tries. Please wait a few minutes.', nameHint: 'With the same code and name you can open it on any phone or computer.',
         photos: 'Group photos', add: 'Add photo', adding: 'Uploading…', none: 'No photos yet. Yours could be the first.', you: 'You',
         del: 'Delete', delQ: 'Delete this photo?', close: 'Close', prev: 'Previous', next: 'Next', failed: "The upload didn't work. Try again when you have signal.",
-        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap + to add a photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
+        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', yours: 'Your shot', others: 'Others’ shots', othersN: n => n === 1 ? '1 shot' : `${n} shots`, replace: 'Replace', replaced: 'Your shot was replaced', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap + to add a photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
 };
 const W = () => T[(document.documentElement.lang || 'he').startsWith('en') ? 'en' : 'he'];
 
@@ -133,47 +133,102 @@ async function resume() {
   try {
     await timeout(session(), 9000);
     const r = await timeout(rpc('resume_tour', { p_slug: SLUG }), 9000);
-    if (!r) { if (member) { member = null; ls.set(ME, 'null'); } decorate(true); return; }
-    member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member));
+    if (!r) {
+      if (member) { member = null; ls.set(ME, 'null'); }
+      await viewWithCode();                     // not named yet: the code alone lets this browser see the group's shots
+      decorate(true); if (viewer) loadPhotos(); return;
+    }
+    member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member)); viewer = true;
     const changed = applyState(r.state);
     const codeNow = norm(ls.get(KEY + '-code')), key = norm(r.secret);
     if (key && codeNow !== key) { ls.set(KEY + '-code', key); if (gateOpen() || changed) return reopen(); }
     if (changed) return reopen();
     save();
-    decorate(); loadPhotos();
+    decorate(true); loadPhotos();
   } catch (e) { decorate(false); /* offline: the page carries on with what this device has */ }
 }
+// anyone who has the expedition open (its code is saved here) may look at the group's shots
+let viewer = false;
+async function viewWithCode() {
+  const code = ls.get(KEY + '-code'); if (!code) return;
+  if (ls.get(KEY + '-viewer') === norm(code)) { viewer = true; return; }
+  try {
+    const r = await rpc('view_tour', { p_slug: SLUG, p_code: code });
+    if (r && r.ok) { viewer = true; ls.set(KEY + '-viewer', norm(code)); }
+  } catch (e) {}
+}
 
-// ---------- group photos on the Field cards ----------
-let photos = [], urls = {}, loadedAt = 0, decoT = 0;
+// ---------- shots on the Field cards: one per traveler per card ----------
+// Saving data: thumbnails (about 15 KB) on the cards, the full photo only when opened; signed links are kept
+// on the device for days so the browser's cache serves repeat views; live updates carry only the small row,
+// and only while the Field room is on screen.
+let photos = [], names = {}, decoT = 0, loaded = false;
 const thumbOf = p => p.replace(/\.jpg$/, '_t.jpg');
 const itemOf = el => el.id.startsWith('fa-') ? { kind: 'animal', id: el.id.slice(3) } : { kind: 'exercise', id: el.id.slice(3) };
 const forItem = it => photos.filter(p => p.item_kind === it.kind && p.item_id === it.id);
+const whoOf = p => names[p.member_id] || p.members?.name || '';
 
-async function loadPhotos(force) {
-  if (!member || !sb) return;
-  if (!force && Date.now() - loadedAt < 20000) return;
-  loadedAt = Date.now();
-  try {
-    const { data, error } = await sb.from('photos').select('id,item_kind,item_id,path,created_at,member_id,members(name)')
-      .eq('tour_slug', SLUG).order('created_at', { ascending: false });
-    if (error) throw error;
-    photos = data || [];
-    const need = photos.flatMap(p => [p.path, thumbOf(p.path)]).filter(x => !urls[x]);
-    for (let i = 0; i < need.length; i += 100) {
-      const { data: s } = await sb.storage.from(BUCKET).createSignedUrls(need.slice(i, i + 100), 60 * 60 * 12);
-      (s || []).forEach(x => { if (x.signedUrl) urls[x.path] = x.signedUrl; });
-    }
-    decorate(true);
-  } catch (e) { loadedAt = 0; }
+// signed links, remembered on this device: same link = the browser's cached copy, no new download
+const URLS_KEY = 'mw-photo-links', LINK_DAYS = 7;
+let links = {}; try { links = JSON.parse(ls.get(URLS_KEY) || '{}'); } catch (e) {}
+const fresh = p => links[p] && links[p][1] > Date.now() + 864e5;
+const url = p => (fresh(p) && links[p][0]) || '';
+async function sign(paths) {
+  const need = [...new Set(paths)].filter(p => !fresh(p));
+  for (let i = 0; i < need.length; i += 100) {
+    const { data } = await sb.storage.from(BUCKET).createSignedUrls(need.slice(i, i + 100), LINK_DAYS * 864e2);
+    (data || []).forEach(x => { if (x.signedUrl) links[x.path] = [x.signedUrl, Date.now() + LINK_DAYS * 864e5]; });
+  }
+  for (const k of Object.keys(links)) if (links[k][1] < Date.now()) delete links[k];   // keep the list small
+  ls.set(URLS_KEY, JSON.stringify(links));
 }
 
-// on each card's picture: a round + to add a photo, and the group's photos as a small stack to open
+async function loadPhotos() {
+  if (!(member || viewer) || !sb) return;
+  if (loaded) { live(); return; }
+  try {
+    const { data, error } = await sb.from('photos').select('id,item_kind,item_id,path,created_at,member_id,members(name)')
+      .eq('tour_slug', SLUG).order('created_at', { ascending: true });
+    if (error) throw error;
+    photos = data || []; photos.forEach(p => { if (p.members?.name) names[p.member_id] = p.members.name; });
+    loaded = true;
+    await sign(photos.map(p => thumbOf(p.path)));          // thumbnails only; full size when opened
+    decorate(true); live();
+  } catch (e) { loaded = false; }
+}
+
+// live updates while the Field room is on screen
+let chan = null;
+const fieldOn = () => { const f = $('#field'); return !!f && !f.hidden && document.visibilityState === 'visible'; };
+function live() {
+  const want = !!((member || viewer) && sb && loaded && fieldOn());
+  if (want && !chan) {
+    chan = sb.channel('photos-' + SLUG)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'photos', filter: 'tour_slug=eq.' + SLUG }, async ({ new: row }) => {
+        if (!row || photos.some(p => p.id === row.id)) return;
+        if (!names[row.member_id]) { try { const { data } = await sb.from('members').select('id,name').eq('id', row.member_id).maybeSingle(); if (data) names[data.id] = data.name; } catch (e) {} }
+        photos.push(row); await sign([thumbOf(row.path)]); decorate(true);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'photos' }, ({ old }) => {
+        const n = photos.length; photos = photos.filter(p => p.id !== (old && old.id)); if (photos.length !== n) decorate(true);
+      })
+      .subscribe();
+  } else if (!want && chan) { sb.removeChannel(chan); chan = null; }
+}
+// back on screen after a while: pick up anything missed, then listen again
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && fieldOn() && loaded) { loaded = false; loadPhotos(); } else live();
+});
+
+// on each card's picture: your shot (or a + to add it), and the others' shots as a small stack
 function overlay(tile) {
-  const it = itemOf(tile), list = member ? forItem(it) : [], w = W();
-  const stack = list.slice(0, 3).map(p => `<i style="background-image:url('${esc(urls[thumbOf(p.path)] || urls[p.path] || '')}')"></i>`).join('');
-  return `<button type="button" class="mwp-plus" data-mwp-add aria-label="${esc(w.add)}" title="${esc(w.add)}"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>`
-    + (list.length ? `<button type="button" class="mwp-stack" data-mwp-open="0" aria-label="${esc(w.photos + ': ' + list.length)}" title="${esc(w.photos)}">${stack}<b>${list.length}</b></button>` : '');
+  const it = itemOf(tile), list = (member || viewer) ? forItem(it) : [], w = W();
+  const mine = member && list.find(p => p.member_id === member.id), others = list.filter(p => p !== mine);
+  const stack = others.slice(-3).reverse().map(p => `<i style="background-image:url('${esc(url(thumbOf(p.path)))}')"></i>`).join('');
+  const top = mine
+    ? `<button type="button" class="mwp-mine" data-mwp-mine aria-label="${esc(w.yours)}" title="${esc(w.yours)}" style="background-image:url('${esc(url(thumbOf(mine.path)))}')"><span>${esc(w.yours)}</span></button>`
+    : `<button type="button" class="mwp-plus" data-mwp-add aria-label="${esc(w.add)}" title="${esc(w.add)}"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>`;
+  return top + (others.length ? `<button type="button" class="mwp-stack" data-mwp-others aria-label="${esc(w.others + ': ' + others.length)}" title="${esc(w.others)}">${stack}<b>${esc(w.othersN(others.length))}</b></button>` : '');
 }
 function decorate(refresh) {
   document.querySelectorAll('#field .ftile[id^="fa-"], #field .ftile[id^="fx-"]').forEach(tile => {
@@ -186,7 +241,7 @@ function decorate(refresh) {
   });
 }
 
-// make a phone photo light enough to send from the field: 1600 px long side, and a small thumbnail
+// make a phone photo light enough to send from the field: 1280 px long side, and a 320 px thumbnail
 async function shrink(file, max, q) {
   const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null);
   const src = bmp || await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
@@ -200,38 +255,52 @@ function toast(t) {
   let el = $('.mwp-toast'); if (!el) { el = document.createElement('div'); el.className = 'mwp-toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
   el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 3200);
 }
+async function removeShot(p) {
+  await sb.from('photos').delete().eq('id', p.id);
+  await sb.storage.from(BUCKET).remove([p.path, thumbOf(p.path)]);
+  photos = photos.filter(x => x.id !== p.id);
+}
+// one shot per traveler per card: a new one replaces the old
 async function upload(tile, file) {
   const it = itemOf(tile), w = W(), b = tile.querySelector('.mwp-ov');
   if (!navigator.onLine) return toast(w.offline);
   b.dataset.busy = '1'; b.classList.add('busy');
   try {
     await session();
-    const [full, small] = await Promise.all([shrink(file, 1600, 0.84), shrink(file, 420, 0.78)]);
+    const [full, small] = await Promise.all([shrink(file, 1280, 0.8), shrink(file, 320, 0.7)]);
     const path = `${SLUG}/${member.id}/${it.kind}-${it.id}-${Date.now()}.jpg`;
-    const up1 = await sb.storage.from(BUCKET).upload(path, full, { contentType: 'image/jpeg', upsert: false });
+    const opts = { contentType: 'image/jpeg', upsert: false, cacheControl: '31536000' };   // never changes: cache for a year
+    const up1 = await sb.storage.from(BUCKET).upload(path, full, opts);
     if (up1.error) throw up1.error;
-    await sb.storage.from(BUCKET).upload(thumbOf(path), small, { contentType: 'image/jpeg', upsert: false });
-    const ins = await sb.from('photos').insert({ tour_slug: SLUG, member_id: member.id, item_kind: it.kind, item_id: it.id, path });
+    await sb.storage.from(BUCKET).upload(thumbOf(path), small, opts);
+    const old = forItem(it).find(p => p.member_id === member.id);
+    if (old) await removeShot(old);
+    const ins = await sb.from('photos').insert({ tour_slug: SLUG, member_id: member.id, item_kind: it.kind, item_id: it.id, path })
+      .select('id,item_kind,item_id,path,created_at,member_id').single();
     if (ins.error) { await sb.storage.from(BUCKET).remove([path, thumbOf(path)]); throw ins.error; }
-    toast(w.added);
+    names[member.id] = member.name;
+    if (!photos.some(p => p.id === ins.data.id)) photos.push(ins.data);
+    await sign([thumbOf(path)]);
+    toast(old ? w.replaced : w.added);
   } catch (e) { toast(w.failed); }
   delete b.dataset.busy; b.classList.remove('busy');
-  await loadPhotos(true);
+  decorate(true);
 }
 
-// full-screen viewer for one item's photos
-function viewer(tile, start) {
-  const it = itemOf(tile), list = forItem(it), title = tile.querySelector('h4')?.textContent || '';
+// full-screen viewer: your shot (replace / delete), or the others' shots one by one
+function showShots(tile, list, mine) {
+  const title = tile.querySelector('h4')?.textContent || '';
   if (!list.length) return;
-  let i = Math.min(start, list.length - 1);
+  let i = 0;
   const v = document.createElement('div'); v.className = 'mwp-v'; v.dir = document.documentElement.dir || 'rtl';
   v.setAttribute('role', 'dialog'); v.setAttribute('aria-modal', 'true');
-  const draw = () => {
-    const p = list[i], w = W(), mine = p.member_id === member.id;
+  const draw = async () => {
+    const p = list[i], w = W();
+    if (!url(p.path)) { try { await sign([p.path]); } catch (e) {} }   // full size only now
     const when = new Date(p.created_at).toLocaleDateString(document.documentElement.lang || 'he', { day: 'numeric', month: 'short' });
-    v.innerHTML = `<figure><img src="${esc(urls[p.path] || urls[thumbOf(p.path)] || '')}" alt="${esc(title)}"></figure>
-      <div class="mwp-bar"><div><b>${esc(title)}</b><small>${esc(mine ? w.you : p.members?.name || '')} · ${esc(when)}${list.length > 1 ? ' · ' + esc(w.of(i + 1, list.length)) : ''}</small></div>
-      ${mine ? `<button type="button" class="mwp-del">${esc(w.del)}</button>` : ''}</div>
+    v.innerHTML = `<figure><img src="${esc(url(p.path) || url(thumbOf(p.path)))}" alt="${esc(title)}"></figure>
+      <div class="mwp-bar"><div><b>${esc(title)}</b><small>${esc(mine ? w.you : whoOf(p))} · ${esc(when)}${list.length > 1 ? ' · ' + esc(w.of(i + 1, list.length)) : ''}</small></div>
+      ${mine ? `<button type="button" class="mwp-rep">${esc(w.replace)}</button><button type="button" class="mwp-del">${esc(w.del)}</button>` : ''}</div>
       <button type="button" class="mwp-x" aria-label="${esc(w.close)}">×</button>
       ${list.length > 1 ? `<button type="button" class="mwp-nav p" aria-label="${esc(w.prev)}">‹</button><button type="button" class="mwp-nav n" aria-label="${esc(w.next)}">›</button>` : ''}`;
     v.querySelector('.mwp-x').onclick = close;
@@ -239,17 +308,18 @@ function viewer(tile, start) {
     const rtl = v.dir === 'rtl';
     v.querySelector('.mwp-nav.p')?.addEventListener('click', () => step(rtl ? 1 : -1));
     v.querySelector('.mwp-nav.n')?.addEventListener('click', () => step(rtl ? -1 : 1));
+    v.querySelector('.mwp-rep')?.addEventListener('click', () => { close(); pickFor = tile; picker.click(); });
     v.querySelector('.mwp-del')?.addEventListener('click', async () => {
       if (!confirm(W().delQ)) return;
-      try { await sb.from('photos').delete().eq('id', p.id); await sb.storage.from(BUCKET).remove([p.path, thumbOf(p.path)]); } catch (e) {}
-      close(); loadPhotos(true);
+      try { await removeShot(p); } catch (e) {}
+      close(); decorate(true);
     });
   };
   const key = e => { if (e.key === 'Escape') close(); if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') v.querySelector(e.key === 'ArrowLeft' ? '.mwp-nav.p' : '.mwp-nav.n')?.click(); };
   function close() { v.remove(); removeEventListener('keydown', key); }
   addEventListener('keydown', key);
   v.addEventListener('click', e => { if (e.target === v || e.target.tagName === 'FIGURE') close(); });
-  draw(); document.body.appendChild(v);
+  document.body.appendChild(v); draw();
 }
 
 function askName() {
@@ -257,7 +327,7 @@ function askName() {
   v.className = 'mwp-ask'; v.dir = document.documentElement.dir || 'rtl';
   v.innerHTML = `<form class="mwp-card" role="dialog" aria-modal="true" novalidate><button type="button" class="mwp-x" aria-label="${esc(w.close)}">×</button>
     <h2>${esc(w.whoTitle)}</h2><p>${esc(w.whoText)}</p>
-    <input type="text" autocomplete="name" autocapitalize="words" spellcheck="false" placeholder="${esc(w.namePh)}" value="${esc(ls.get(NAME) || '')}">
+    <input type="text" autocomplete="given-name" autocapitalize="words" spellcheck="false" placeholder="${esc(w.namePh)}" value="${esc(ls.get(NAME) || '')}">
     <button type="submit" class="mwp-go">${esc(w.go)}</button><p class="mwp-msg" role="status"></p></form>`;
   const f = v.querySelector('form'), inp = f.querySelector('input'), go = f.querySelector('.mwp-go'), msg = f.querySelector('.mwp-msg');
   const close = () => v.remove();
@@ -272,10 +342,11 @@ function askName() {
       await timeout(session(), 9000);
       const r = await timeout(rpc('join_tour', { p_slug: SLUG, p_code: ls.get(KEY + '-code') || '', p_name: name }), 9000);
       if (r && r.error) { go.disabled = false; go.textContent = w.go; msg.textContent = r.error === 'tour_not_ready' ? w.notReady : r.error === 'too_many_attempts' ? w.many : w.tryLater; return; }
-      ls.set(NAME, name); member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member));
+      ls.set(NAME, name); member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member)); viewer = true;
+      names[member.id] = member.name;
       close();
       if (applyState(r.state)) { await save(); return reopen(); }   // their lists from another device: reload to show them
-      save(); decorate(true); await loadPhotos(true); toast(w.joined);
+      save(); loaded = false; await loadPhotos(); decorate(true); toast(w.joined);
     } catch (err) { go.disabled = false; go.textContent = w.go; msg.textContent = w.tryLater; }
   };
   document.body.appendChild(v); setTimeout(() => inp.focus(), 60);
@@ -287,12 +358,15 @@ let pickFor = null;
 picker.addEventListener('change', () => { const f = picker.files && picker.files[0]; if (f && pickFor) upload(pickFor, f); picker.value = ''; });
 
 document.addEventListener('click', e => {
-  const add = e.target.closest('[data-mwp-add]'), open = e.target.closest('[data-mwp-open]');
-  if (!add && !open) return;
+  const add = e.target.closest('[data-mwp-add]'), mineB = e.target.closest('[data-mwp-mine]'), oth = e.target.closest('[data-mwp-others]');
+  if (!add && !mineB && !oth) return;
   const tile = e.target.closest('.ftile'); if (!tile) return;
   e.preventDefault(); e.stopPropagation();
-  if (add) { if (tile.querySelector('.mwp-ov')?.dataset.busy) return; if (!member) return askName(); pickFor = tile; picker.click(); }
-  else viewer(tile, +open.dataset.mwpOpen);
+  if (tile.querySelector('.mwp-ov')?.dataset.busy) return;
+  const it = itemOf(tile);
+  if (add) { if (!member) return askName(); pickFor = tile; picker.click(); }
+  else if (mineB) showShots(tile, forItem(it).filter(p => p.member_id === member.id), true);
+  else showShots(tile, forItem(it).filter(p => !member || p.member_id !== member.id).reverse(), false);
 }, true);
 
 // ---------- look ----------
@@ -323,6 +397,11 @@ const css = `
 .mwp-plus svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .mwp-ov.busy .mwp-plus svg{animation:mwpSpin .9s linear infinite}
 @keyframes mwpSpin{to{transform:rotate(360deg)}}
+.mwp-mine{position:absolute;top:10px;inset-inline-end:10px;width:44px;height:44px;padding:0;border-radius:50%;border:2px solid #F4AF56;background:#26221D center/cover no-repeat;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.mwp-mine span{position:absolute;top:calc(100% + 4px);inset-inline-end:50%;transform:translateX(50%);padding:2px 7px;border-radius:64px;background:rgba(10,9,8,.75);color:#FEFBF1;font:600 10.5px/1.4 "Google Sans",sans-serif;white-space:nowrap}
+[dir=rtl] .mwp-mine span{transform:translateX(-50%)}
+.mwp-ov.busy .mwp-mine{opacity:.5}
+.mwp-rep{min-height:38px;padding-inline:16px;border-radius:64px;border:1px solid rgba(244,175,86,.6);background:none;color:#F4AF56;font:700 13px "Google Sans",sans-serif;cursor:pointer}
 .mwp-stack{position:absolute;bottom:10px;inset-inline-start:10px;display:flex;align-items:center;gap:0;padding:4px 10px 4px 4px;border-radius:64px;border:1px solid rgba(254,251,241,.28);background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#FEFBF1;cursor:pointer;font:700 13px/1 "Google Sans",sans-serif}
 [dir=rtl] .mwp-stack{padding:4px 4px 4px 10px}
 .mwp-stack i{width:28px;height:28px;border-radius:50%;border:2px solid #14120F;background:#26221D center/cover no-repeat;margin-inline-start:-9px}
@@ -369,7 +448,7 @@ function boot() {
   const field = $('#field');
   if (field) {
     new MutationObserver(() => { clearTimeout(decoT); decoT = setTimeout(() => decorate(false), 60); }).observe(field, { childList: true, subtree: true });
-    new MutationObserver(() => { if (!field.hidden) { decorate(false); loadPhotos(); } }).observe(field, { attributes: true, attributeFilter: ['hidden'] });
+    new MutationObserver(() => { if (!field.hidden) { decorate(false); loadPhotos(); } else live(); }).observe(field, { attributes: true, attributeFilter: ['hidden'] });
     decorate(false); setTimeout(() => decorate(false), 1500);
   }
   new MutationObserver(relabel).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });

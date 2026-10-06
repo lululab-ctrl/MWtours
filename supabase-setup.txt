@@ -278,6 +278,59 @@ create policy "Tour members delete their own photos, admin any" on storage.objec
            select d.member_id::text from public.member_devices d where d.user_id = auth.uid())
          or public.is_tour_admin()));
 
+-- ---------------------------------------------------------------------
+-- 7. SHOTS: one per traveler per card, viewing with the code, live updates
+-- ---------------------------------------------------------------------
+
+-- 1. One shot per traveler per card (keep the newest if there are already more)
+delete from public.photos p using public.photos q
+ where p.member_id = q.member_id and p.item_kind = q.item_kind and p.item_id = q.item_id and p.id < q.id;
+create unique index if not exists photos_one_per_card on public.photos (member_id, item_kind, item_id);
+
+-- 2. Anyone with the expedition's code may LOOK at the group's shots (the name is needed only to add one)
+create table if not exists public.tour_viewers (
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  tour_slug  text not null references public.tours (slug) on delete cascade,
+  added_at   timestamptz not null default now(),
+  primary key (user_id, tour_slug)
+);
+alter table public.tour_viewers enable row level security;
+revoke all on public.tour_viewers from anon, authenticated;
+
+create or replace function public.view_tour(p_slug text, p_code text) returns json
+language plpgsql security definer set search_path = public, extensions as $$
+declare t public.tours;
+begin
+  if auth.uid() is null then raise exception 'no_session'; end if;
+  if (select count(*) from public.join_attempts where user_id = auth.uid() and at > now() - interval '15 minutes') >= 10 then
+    return json_build_object('error', 'too_many_attempts');
+  end if;
+  select * into t from public.tours where slug = p_slug;
+  if not found or t.join_code_hash is null then return json_build_object('error', 'tour_not_ready'); end if;
+  if extensions.crypt(public.norm_code(p_code), t.join_code_hash) <> t.join_code_hash then
+    insert into public.join_attempts (user_id) values (auth.uid());
+    return json_build_object('error', 'wrong_code');
+  end if;
+  insert into public.tour_viewers (user_id, tour_slug) values (auth.uid(), p_slug) on conflict do nothing;
+  return json_build_object('ok', true);
+end $$;
+grant execute on function public.view_tour(text, text) to authenticated;
+
+-- every expedition this browser may see: joined with a name, or opened with the code
+create or replace function public.my_tours() returns setof text
+language sql stable security definer set search_path = public as $$
+  select m.tour_slug from public.members m join public.member_devices d on d.member_id = m.id where d.user_id = auth.uid()
+  union
+  select v.tour_slug from public.tour_viewers v where v.user_id = auth.uid()
+$$;
+
+-- 3. Live updates: new and deleted shots reach the open pages (only the small row, never the image)
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'photos') then
+    alter publication supabase_realtime add table public.photos;
+  end if;
+end $$;
+
 -- =====================================================================
 -- DASHBOARD STEPS (do these first)
 -- =====================================================================
