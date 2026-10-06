@@ -874,7 +874,7 @@ const UI = {
     during: n => n === 0 ? 'היום יוצאים לדרך' : `היום: יום ${pad2(n)} מתוך ${pad2(D1())}`, chipDuring: n => n === 0 ? 'יוצאים' : `יום ${pad2(n)}`,
     after: 'המסע הסתיים. תודה שהייתם איתנו.',
     weekday: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
-    rise: 'זריחה', set: 'שקיעה', depart: 'יציאה', home: 'טיסה הביתה',
+    rise: 'זריחה', set: 'שקיעה', depart: 'יציאה', home: 'טיסה',
     storiesHere: n => n === 1 ? 'סיפור אחד מהאזור' : `${n} סיפורים מהאזור`, storiesN: n => n === 1 ? 'סיפור אחד' : `${n} סיפורים`,
     showOnMap: n => `${n} סיפורים על המפה`, toDay: n => n === 0 ? 'ליום היציאה' : `ליום ${pad2(n)}`,
     airport: 'שדה תעופה', stop: 'תחנה במסע', next: 'הבא', prev: 'הקודם', of: (a, b) => `${a} מתוך ${b}`, seenMark: name => `ראיתי ${name}`,
@@ -907,7 +907,7 @@ const UI = {
     during: n => n === 0 ? 'Today we set off' : `Today: day ${pad2(n)} of ${pad2(D1())}`, chipDuring: n => n === 0 ? 'Departing' : `Day ${pad2(n)}`,
     after: 'The expedition is over. Thank you for coming with us.',
     weekday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    rise: 'Sunrise', set: 'Sunset', depart: 'Departure', home: 'Flight home',
+    rise: 'Sunrise', set: 'Sunset', depart: 'Departure', home: 'Flight',
     storiesHere: n => n === 1 ? 'One story from here' : `${n} stories from here`, storiesN: n => n === 1 ? 'One story' : `${n} stories`,
     showOnMap: n => `${n} stories on the map`, toDay: n => n === 0 ? 'To departure day' : `To day ${pad2(n)}`,
     airport: 'Airport', stop: 'On the route', next: 'Next', prev: 'Previous', of: (a, b) => `${a} of ${b}`, seenMark: name => `Seen: ${name}`,
@@ -1819,7 +1819,7 @@ function renderTimeline() {
     T.days.map(d => {
       const { m, d: dd } = parseDay(d.date);
       const big = d.n === 0 || d.home ? d.date.slice(8, 10) + '.' + pad2(m) : pad2(d.n);
-      const small = d.n === 0 ? L.depart : d.home ? L.home : `${dd}.${m}`;
+      const small = d.n === 0 ? L.depart : d.home ? (d[lang].tag || L.home) : `${dd}.${m}`;
       return `<button class="tl-day${d.date === today ? ' today' : ''}" role="tab" type="button" data-day="${d.n}" style="--area:${AREA[d.sun] || 'transparent'}" aria-label="${esc(d[lang].label + ' · ' + d[lang].title)}"><b>${esc(big)}</b><small>${esc(small)}</small></button>`;
     }).join('') + `</div><button class="tl-nav" type="button" data-dstep="1" aria-label="${L.nextDay}" title="${L.nextDay}">${ic('next', 'flip')}</button>`;
   markTimeline();
@@ -2101,7 +2101,7 @@ function renderInfo() {
     const open = d.date === today;
     return `<div class="dday${open ? ' open' : ''}${d.date === today ? ' today' : ''}" style="--area:${AREA[d.sun] || 'transparent'}">
       <button class="drow" type="button" data-dayrow="${d.n}" aria-expanded="${open}">
-      <span class="n"><b>${d.home ? `${dd}.${m}` : pad2(d.n)}</b><small>${d.home ? esc(L.home) : `${dd}.${m}`}</small></span><span><span class="h">${esc(c.title)}</span><span class="p">${esc(c.text)}</span></span>${ic('next')}</button>
+      <span class="n"><b>${d.home ? `${dd}.${m}` : pad2(d.n)}</b><small>${d.home ? esc(d[lang].tag || L.home) : `${dd}.${m}`}</small></span><span><span class="h">${esc(c.title)}</span><span class="p">${esc(c.text)}</span></span>${ic('next')}</button>
       <div class="dpanel"><div class="dpin">
         ${schedHTML(c.text)}
         <div class="rows">
