@@ -25,6 +25,9 @@ h2{margin:0;font-size:21px;line-height:1.25;color:var(--paper)}
 h3{margin:0;font:600 11.5px/1.4 var(--label);letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft)}
 .lede{margin:0;color:var(--muted)}
 .head{display:flex;flex-wrap:wrap;align-items:end;gap:10px 16px;justify-content:space-between}
+.setup{border-color:rgba(240,138,122,.55);background:rgba(240,138,122,.07)}
+.setup ol{margin:0;padding-inline-start:20px;display:grid;gap:10px;color:var(--muted)}
+.setup b{color:var(--paper)}
 .card{display:grid;gap:16px;padding:22px;border-radius:22px;background:rgba(254,251,241,.04);border:1px solid var(--rule)}
 label{display:grid;gap:6px;font-size:14px;color:var(--muted)}
 input{width:100%;height:48px;padding-inline:16px;border-radius:14px;border:1px solid rgba(254,251,241,.28);background:rgba(10,9,8,.45);color:var(--paper);font-size:16px}
@@ -99,6 +102,7 @@ textarea:focus{outline:none;border-color:var(--gold)}
   </form>
 
   <div id="app" hidden style="display:grid;gap:22px">
+    <div class="card setup" id="setup" hidden></div>
     <p class="lede">Each expedition: its code, its travelers, and the photos they shared. Travelers join with their name + the code, on any phone or computer.</p>
     <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
       <input id="q" type="search" placeholder="Search expeditions by name, place or month" aria-label="Search expeditions" autocomplete="off"></div>
@@ -146,6 +150,23 @@ async function load() {
     (s || []).forEach(x => { if (x.signedUrl) urls[x.path] = x.signedUrl; });
   }
   render(photos);
+  checkSetup(ov.data || []);
+}
+
+// what Supabase still needs, so travelers can join (shown only when something is missing)
+async function checkSetup(tours) {
+  const todo = [];
+  try {
+    const st = await fetch(CFG.url + '/auth/v1/settings', { headers: { apikey: CFG.key } }).then(r => r.json());
+    if (st && st.external && st.external.anonymous_users === false)
+      todo.push('<b>Turn on anonymous sign-ins.</b> Supabase → Authentication → Sign In / Providers → "Allow anonymous sign-ins" → Save. Without it, travelers open the expedition but are never registered, so they don\u2019t appear here.');
+  } catch (e) {}
+  if (tours.length && !('travelers' in tours[0])) todo.push('<b>Run supabase-update-travelers.txt</b> in Supabase → SQL Editor (the traveler list).');
+  const v = await sb.rpc('admin_view_member', { p_member: '00000000-0000-0000-0000-000000000000' });
+  if (v.error && /function|schema cache/i.test(v.error.message)) todo.push('<b>Run supabase-update-view-as.txt</b> in Supabase → SQL Editor (opening a traveler\u2019s view).');
+  const box = $('#setup');
+  box.innerHTML = todo.length ? `<h3>Finish the setup</h3><ol>${todo.map(t => `<li>${t}</li>`).join('')}</ol><p class="hint">Then travelers who already opened an expedition are asked for their name and the code once more, and appear here.</p>` : '';
+  box.hidden = !todo.length;
 }
 
 let lastPhotos = [];
