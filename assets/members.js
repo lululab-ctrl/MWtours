@@ -42,12 +42,12 @@ const T = {
         many: 'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.', nameHint: 'באותו קוד ושם תוכלו להיכנס מכל טלפון או מחשב.',
         photos: 'תמונות הקבוצה', add: 'הוספת תמונה', adding: 'מעלים…', none: 'עדיין אין תמונות. אולי שלכם תהיה הראשונה?', you: 'אתם',
         del: 'מחיקה', delQ: 'למחוק את התמונה?', close: 'סגירה', prev: 'הקודמת', next: 'הבאה', failed: 'ההעלאה לא הצליחה. נסו שוב כשיש קליטה.',
-        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', byName: 'נכנסתם כבר במכשיר אחר? מספיק להקליד את השם.', unknownName: 'השם הזה עוד לא נכנס למסע. הקלידו גם את הקוד.', ambiguous: 'יש כמה עם השם הזה. הקלידו שם מלא או את הקוד.', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
+        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
   en: { name: 'Name', namePh: 'Name', needName: 'Type your name.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
         many: 'Too many tries. Please wait a few minutes.', nameHint: 'With the same code and name you can open it on any phone or computer.',
         photos: 'Group photos', add: 'Add photo', adding: 'Uploading…', none: 'No photos yet. Yours could be the first.', you: 'You',
         del: 'Delete', delQ: 'Delete this photo?', close: 'Close', prev: 'Previous', next: 'Next', failed: "The upload didn't work. Try again when you have signal.",
-        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', byName: 'Joined on another device? Your name is enough.', unknownName: 'This name hasn’t joined this expedition yet. Type the code too.', ambiguous: 'More than one traveler has this name. Type your full name or the code.', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap + to add a photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
+        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap + to add a photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
 };
 const W = () => T[(document.documentElement.lang || 'he').startsWith('en') ? 'en' : 'he'];
 
@@ -125,57 +125,8 @@ function reopen() {
   sessionStorage.setItem(flag, String(Date.now())); location.reload(); return true;
 }
 
-// ---------- the code screen: code + name ----------
-let bypass = false;
-function mountGate() {
-  const form = $('#gate-form'), code = $('#code');
-  if (!form || !code || $('#mw-name')) return;
-  const w = W();
-  const lab = document.createElement('label'); lab.htmlFor = 'mw-name'; lab.id = 'mw-name-l'; lab.textContent = w.name;
-  const inp = document.createElement('input');
-  Object.assign(inp, { id: 'mw-name', name: 'name', type: 'text', autocomplete: 'name', spellcheck: false, placeholder: w.namePh, value: ls.get(NAME) || '' });
-  inp.setAttribute('autocapitalize', 'words'); inp.className = 'mw-name';
-  const first = form.querySelector('label[for="code"]');
-  form.insertBefore(inp, first); form.insertBefore(lab, inp);
-  const by = document.createElement('p'); by.className = 'mw-hint'; by.id = 'mw-byname'; by.textContent = w.byName;
-  $('#gate-err').after(by);
-
-  form.addEventListener('submit', async e => {
-    if (bypass) { bypass = false; return; }               // let the page open it with the key
-    e.preventDefault(); e.stopImmediatePropagation();
-    const err = $('#gate-err'), btn = $('#gate-btn'), label = btn.firstElementChild, w = W();
-    const local = () => { bypass = true; form.requestSubmit(); };   // no Supabase: the page tries the code itself
-    const name = inp.value.trim().replace(/\s+/g, ' ');
-    const byName = !norm(code.value);
-    if (byName && !name) return local();                    // nothing typed: the page asks for the code
-    if (!name) { err.textContent = w.needName; inp.focus(); return; }
-    btn.disabled = true; const was = label.textContent; label.textContent = w.busy; err.textContent = '';
-    try {
-      await timeout(session(), 9000);
-      const r = await timeout(byName ? rpc('join_by_name', { p_slug: SLUG, p_name: name })
-        : rpc('join_tour', { p_slug: SLUG, p_code: code.value, p_name: name }), 9000);
-      if (r && r.error) {
-        btn.disabled = false; label.textContent = was;
-        if (r.error === 'tour_not_ready') return local();
-        err.textContent = r.error === 'too_many_attempts' ? w.many : r.error === 'bad_name' ? w.needName
-          : r.error === 'unknown_name' ? w.unknownName : r.error === 'ambiguous' ? w.ambiguous : w.wrong;
-        form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); code.select();
-        return;
-      }
-      ls.set(NAME, name);
-      member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member));
-      applyState(r.state);
-      ls.set(KEY + '-code', norm(r.secret));
-      await save();
-      sessionStorage.removeItem('mw-reopen-' + SLUG);
-      if (!reopen()) { code.value = r.secret; local(); }
-    } catch (ex) {
-      btn.disabled = false; label.textContent = was;
-      if (byName) { err.textContent = W().tryLater; return; }   // offline: the name alone can't be checked
-      local();
-    }
-  }, true);
-}
+// ---------- the code screen ----------
+// Only the code, handled by the page itself. The name is asked once, when the traveler first adds a photo.
 
 // already joined on this browser: open straight away and bring the latest lists
 async function resume() {
@@ -353,9 +304,6 @@ const css = `
 #gate .gate-in{gap:11px}
 #gate .gate-in .logo{width:72px;margin-block-end:2px}
 #gate .gate-form{margin-block-start:10px;gap:10px}
-.gate-form .mw-name{width:100%;height:54px;border-radius:64px;border:1px solid rgba(254,251,241,.32);background:rgba(10,9,8,.45);text-align:center;font:600 17px/1 "Google Sans",Arial,sans-serif;letter-spacing:0;text-transform:none;color:#FEFBF1;transition:border-color .3s}
-.gate-form .mw-name::placeholder{color:rgba(254,251,241,.3);font-weight:400;letter-spacing:0;text-transform:none}
-.gate-form .mw-name:focus{outline:none;border-color:#F4AF56}
 .mw-hint{margin:-4px 0 0;font-size:13px;color:rgba(244,244,244,.5)}
 #field .ftile .noph,#stories .ftile .noph{aspect-ratio:16/10}
 .mwp-ask{position:fixed;inset:0;z-index:125;display:grid;place-items:center;padding:16px;background:rgba(5,5,4,.66);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:mwpIn .25s ease}
@@ -409,15 +357,11 @@ const css = `
 
 // ---------- start ----------
 function relabel() {
-  const w = W(), l = $('#mw-name-l'), i = $('#mw-name'), h = $('#mw-hint');
-  { const b = $('#mw-byname'); if (b) b.textContent = w.byName; }
-  if (l) l.textContent = w.name; if (i) i.placeholder = w.namePh; if (h) h.textContent = w.nameHint;
   decorate(true);
 }
 function boot() {
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   document.body.appendChild(picker);
-  mountGate();
   // the contour lines behind the code screen cover its whole height, also when it has to scroll
   const gate = $('#gate');
   if (gate) { const fit = () => gate.style.setProperty('--mw-gh', gate.scrollHeight + 'px'); fit(); addEventListener('resize', fit); setTimeout(fit, 800); }
