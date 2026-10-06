@@ -30,8 +30,8 @@ commit finished work straight to `main`; there is no build step.
 - No photo beside the Flights block.
 
 ## Rules
-- Keep all three tours on the same interface: a UI change to one tour goes into the others too
-  (only the vault, the map data and the photos differ between them).
+- Every expedition, now and future, has the same interface as Manas & Kaziranga (the reference): a UI change to
+  one tour goes into all the others too (only the vault, the map data and the photos differ between them).
 - Per-traveler trip: the vault may hold `personal: [{names, patch}]`. The page applies the first entry whose
   name's words all appear in the signed-in traveler's name (from `mw-tour-<slug>-member`): the patch merges into
   the trip (objects merge, arrays/values replace, null removes, `days` keyed by day number). Manas & Kaziranga
