@@ -525,6 +525,9 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .hero>figure{position:absolute;inset:0;margin:0;z-index:-1;background:#14120F}
 .hero.tall{min-height:clamp(440px,72vh,700px)}   /* a photo of people: room for their faces above the title */
 .hero>figure img{display:block;width:100%;height:100%;object-fit:cover;animation:kb 20s ease-out forwards}
+.hero>figure picture{display:contents}
+.hero>figure img{object-position:var(--op,50% 50%)}
+@media (max-width:759px){.hero>figure img{object-position:var(--opm,var(--op,50% 50%))}}
 .hero>figure::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,8,.6) 0,rgba(10,9,8,.08) 26%,rgba(10,9,8,.3) 58%,var(--night) 100%)}
 /* keep the title clear of the top bar and the floating back button */
 .hero{padding-top:calc(var(--top) + env(safe-area-inset-top) + 76px)}
@@ -1955,13 +1958,19 @@ $('#ctl-all').addEventListener('click', () => { stopAuto(); settleLegs(-1); clos
 $('#ctl-assam').addEventListener('click', () => { stopAuto(); settleLegs(-1); closePop(); fly(fit(regionView())); });
 
 // ---------- a room's head: its photo, kicker, title and lede ----------
+// a header photo; it may have its own version and framing for phones (h.phone, h.phoneFocus)
+function heroImg(h) {
+  const pos = f => f ? `${Math.round(f[0] * 100)}% ${Math.round(f[1] * 100)}%` : '50% 50%';
+  const img = `<img src="${esc(h.src)}" alt="" decoding="async" style="--op:${pos(h.focus)};--opm:${pos(h.phoneFocus || (h.phone ? null : h.focus))}">`;
+  return h.phone ? `<picture><source media="(max-width: 759px)" srcset="${esc(h.phone)}">${img}</picture>` : img;
+}
 function heroHTML(room, kicker, title, lede, extra = '') {
   const h = T.heroes && T.heroes[room];
   const head = `<p class="lbl" style="--i:0">${esc(kicker)}</p><h2 class="tt silver" style="--i:1"><span>${esc(title[0])}</span> <b>${esc(title[1])}</b></h2>${lede ? `<p class="lede" style="--i:2">${esc(lede)}</p>` : ''}${extra}`;
   if (!h) return `<div class="wrap"><header class="rh">${head}</header></div>`;
   // on a wide screen the words sit beside the subject, on the side the photo leaves open
   const side = room === 'info' ? 'side-s' : 'side-' + (h.side || (h.focus && h.focus[0] > 0.5 ? 'l' : 'r'));   // Good to know: lined up with the text below
-  return `<header class="hero ${side}${h.tall ? ' tall' : ''}"><figure><img src="${esc(h.src)}" alt="" decoding="async"${objPos(h.focus)}></figure><div class="in">${head}</div></header>`;
+  return `<header class="hero ${side}${h.tall ? ' tall' : ''}"><figure>${heroImg(h)}</figure><div class="in">${head}</div></header>`;
 }
 
 // ---------- stories room ----------
