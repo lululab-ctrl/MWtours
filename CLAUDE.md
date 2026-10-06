@@ -28,6 +28,8 @@ commit finished work straight to `main`; there is no build step.
   name's words all appear in the signed-in traveler's name (from `mw-tour-<slug>-member`): the patch merges into
   the trip (objects merge, arrays/values replace, null removes, `days` keyed by day number). Manas & Kaziranga
   uses it for each traveler's return flight; everyone there starts in Delhi.
+- Map days: each day has its own frame (`steps[].bbox`); days in a row with the same frame are spread automatically
+  (`spreadDays`). A park day can carry `spot: {lonlat, he, en}`: a marked, labelled place shown on that day only.
 - The Flights block never shows a photo beside it (even if the vault has one); keep it that way in new tours.
 - A new expedition: copy an existing tour folder as the template, give it its own vault/maps/photos,
   add it to `tours.json` with its `slug`, then Matan connects it once in `/admin`.

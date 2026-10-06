@@ -206,6 +206,11 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .mk .tag small{font-size:11px;font-weight:500;color:var(--faint)}
 .mk.ap .dot{width:8px;height:8px;margin:-4px 0 0 -4px}
 .mk.short .tag{transform:translate(calc(-100% - 10px),-50%);padding-inline:8px}
+.spot{pointer-events:none;opacity:0;transition:opacity .6s;z-index:3}
+.spot.show{opacity:1}
+.spot i{position:absolute;left:-26px;top:-26px;width:52px;height:52px;border-radius:50%;border:2px solid var(--amber);background:rgba(232,162,62,.14);box-shadow:0 0 0 3px rgba(10,9,8,.35)}
+.spot i::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--amber);animation:breathe 2.4s ease-out infinite}
+.spot b{position:absolute;left:0;top:-64px;transform:translateX(-50%);height:28px;padding-inline:12px;display:inline-flex;align-items:center;border-radius:var(--pill);background:var(--amber);color:var(--night);font:700 12.5px/1 var(--sans);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 .mk.here .dot{background:var(--amber);box-shadow:0 0 0 3px rgba(10,9,8,.65)}
 .mk.here .dot::before{content:"";position:absolute;inset:-7px;border-radius:50%;background:rgba(232,162,62,.25);animation:glow 2.4s ease-in-out infinite}
 @keyframes glow{50%{transform:scale(1.5);opacity:.35}}
@@ -1129,6 +1134,8 @@ function buildOverlay() {
     const item = { el, x, y, min: 0, max: 1e9, ppd: 0, vis: null, ...o };
     overlay.push(item); return item;
   };
+  // where a day happens inside a park (day.spot): a marked place that shows on that day only
+  for (const d of T.days) if (d.spot) add(`<i></i><b>${esc(d.spot[lang])}</b>`, 'spot', d.spot.lonlat, { min: 0, max: 1e9, day: d.n });
   for (const l of T.labels) add(`<span>${esc(l[lang])}</span>`, 'lab ' + l.cls, l.lonlat, { min: l.min || 0, max: l.max || 1e9, ppd: l.ppd || 0 });
   for (const [id, pl] of Object.entries(T.places)) {
     const ap = pl.kind === 'airport';
@@ -1333,7 +1340,7 @@ async function goDay(n, animate = true) {
 function markStops() {
   const day = T.days.find(d => d.n === current);
   const here = day ? (day.sun || null) : null;
-  overlay.forEach(o => { if (o.place && o.el.classList.contains('stop')) o.el.classList.toggle('here', o.place === here); });
+  overlay.forEach(o => { if (o.place && o.el.classList.contains('stop')) o.el.classList.toggle('here', o.place === here); if (o.day != null) o.el.classList.toggle('show', o.day === current); });
 }
 function zoomToGroup(gs) {
   stopAuto(); closePop();
