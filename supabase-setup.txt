@@ -144,9 +144,15 @@ create policy "Members add their own photos" on public.photos for insert to auth
   with check (member_id = public.my_member(tour_slug)
               and path like tour_slug || '/' || member_id::text || '/%');
 
+create or replace function public.my_members() returns setof uuid
+language sql stable security definer set search_path = public as $$
+  select d.member_id from public.member_devices d where d.user_id = auth.uid()
+$$;
+revoke execute on function public.my_members() from public, anon;
+grant execute on function public.my_members() to authenticated;
+
 create policy "Delete own photos, admin any" on public.photos for delete to authenticated
-  using (member_id in (select d.member_id from public.member_devices d where d.user_id = auth.uid())
-         or public.is_tour_admin());
+  using (member_id in (select public.my_members()) or public.is_tour_admin());
 
 -- ---------------------------------------------------------------------
 -- 4. WHAT THE EXPEDITION PAGES CALL
@@ -274,8 +280,7 @@ create policy "Tour members upload their own photos" on storage.objects for inse
   with check (bucket_id = 'tour-photos' and (storage.foldername(name))[2] = public.my_member((storage.foldername(name))[1])::text);
 
 create policy "Tour members delete their own photos, admin any" on storage.objects for delete to authenticated
-  using (bucket_id = 'tour-photos' and ((storage.foldername(name))[2] in (
-           select d.member_id::text from public.member_devices d where d.user_id = auth.uid())
+  using (bucket_id = 'tour-photos' and ((storage.foldername(name))[2] in (select public.my_members()::text)
          or public.is_tour_admin()));
 
 -- ---------------------------------------------------------------------
