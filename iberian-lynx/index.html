@@ -643,6 +643,9 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
   .hero .in>*{max-width:min(600px,44vw)}
   .hero.side-l .in{justify-items:left}
   .hero.side-r .in{justify-items:right}
+  .hero.side-s .in{max-width:calc(1080px + 64px);padding-inline:32px;justify-items:start}
+  .hero.side-s>figure::after{background:linear-gradient(90deg,rgba(10,9,8,.8) 0,rgba(10,9,8,.4) 32%,rgba(10,9,8,0) 56%),linear-gradient(180deg,rgba(10,9,8,.55) 0,rgba(10,9,8,0) 24%,rgba(10,9,8,.12) 66%,var(--night) 100%)}
+  [dir=rtl] .hero.side-s>figure::after{background:linear-gradient(270deg,rgba(10,9,8,.8) 0,rgba(10,9,8,.4) 32%,rgba(10,9,8,0) 56%),linear-gradient(180deg,rgba(10,9,8,.55) 0,rgba(10,9,8,0) 24%,rgba(10,9,8,.12) 66%,var(--night) 100%)}
   .hero.side-l>figure::after{background:linear-gradient(90deg,rgba(10,9,8,.8) 0,rgba(10,9,8,.4) 32%,rgba(10,9,8,0) 56%),linear-gradient(180deg,rgba(10,9,8,.55) 0,rgba(10,9,8,0) 24%,rgba(10,9,8,.12) 66%,var(--night) 100%)}
   .hero.side-r>figure::after{background:linear-gradient(270deg,rgba(10,9,8,.8) 0,rgba(10,9,8,.4) 32%,rgba(10,9,8,0) 56%),linear-gradient(180deg,rgba(10,9,8,.55) 0,rgba(10,9,8,0) 24%,rgba(10,9,8,.12) 66%,var(--night) 100%)}
   .toast{bottom:28px}
@@ -1920,7 +1923,7 @@ function heroHTML(room, kicker, title, lede, extra = '') {
   const head = `<p class="lbl" style="--i:0">${esc(kicker)}</p><h2 class="tt silver" style="--i:1"><span>${esc(title[0])}</span> <b>${esc(title[1])}</b></h2>${lede ? `<p class="lede" style="--i:2">${esc(lede)}</p>` : ''}${extra}`;
   if (!h) return `<div class="wrap"><header class="rh">${head}</header></div>`;
   // on a wide screen the words sit beside the subject, on the side the photo leaves open
-  const side = 'side-' + (room === 'info' ? 'l' : h.side || (h.focus && h.focus[0] > 0.5 ? 'l' : 'r'));   // Good to know: always on the left
+  const side = room === 'info' ? 'side-s' : 'side-' + (h.side || (h.focus && h.focus[0] > 0.5 ? 'l' : 'r'));   // Good to know: lined up with the text below
   return `<header class="hero ${side}"><figure><img src="${esc(h.src)}" alt="" decoding="async"${objPos(h.focus)}></figure><div class="in">${head}</div></header>`;
 }
 
