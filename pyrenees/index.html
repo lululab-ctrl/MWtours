@@ -435,6 +435,9 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .fl .r small{font:500 12px/1 var(--sans);letter-spacing:0;color:var(--faint)}
 .fl .no{font-size:13px;color:var(--gold-soft);text-align:end}
 .fl.pending{opacity:.6}
+.fl.bye{grid-template-columns:64px minmax(0,1fr)}
+.fl.bye .b{display:flex;align-items:center;gap:10px;color:var(--gold-soft);font-size:15px;font-weight:600}
+.fl.bye .b .ic{width:16px;height:16px;color:var(--amber)}
 .fl.pending .no{color:var(--faint)}
 .note{margin:0;padding-inline-start:16px;border-inline-start:2px solid var(--amber);color:var(--muted);font-size:15px;max-width:64ch}
 .stays{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:26px 32px}
@@ -2154,7 +2157,8 @@ function renderInfo() {
         <button class="btn small" type="button" data-daymap="${d.n}">${ic('pin')}<span>${esc(S.map)}</span></button>
       </div></div></div>`;
   }).join('');
-  const flights = fl.rows.map(r => `<div class="fl${r.pending ? ' pending' : ''}">
+  // a closing line instead of a flight (r.bye): the last word of the trip
+  const flights = fl.rows.map(r => r.bye ? `<div class="fl bye"><span class="d">${esc(r.date || '')}</span><span class="b">${ic('plane')}${esc(tx(r.bye))}</span></div>` : `<div class="fl${r.pending ? ' pending' : ''}">
       <span class="d">${esc(r.date)}</span><span class="t">${val(r.time)}</span>
       <span class="r">${esc(r.from)}${r.to ? ` ${ic('plane')} ${esc(r.to)}` : ''}${r.arrive ? ` <small>${esc(r.arrive)}</small>` : ''}</span>
       <span class="no">${val(r.flight)}</span></div>`).join('');
