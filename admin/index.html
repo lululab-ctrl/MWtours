@@ -91,7 +91,7 @@ td b{color:var(--paper);font-weight:700}
   </form>
 
   <div id="app" hidden style="display:grid;gap:22px">
-    <p class="lede">Each expedition: its code, who joined, and the photos they shared. Travelers join with the code + their name; with the same code + name they can open it on any phone or computer.</p>
+    <p class="lede">Each expedition and its code. Travelers join with the code + their name.</p>
     <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
       <input id="q" type="search" placeholder="Search expeditions by name, place or month" aria-label="Search expeditions" autocomplete="off"></div>
     <div id="tours" style="display:grid;gap:22px"></div>
@@ -130,14 +130,7 @@ async function load() {
   const rank = { now: 0, soon: 1, past: 2 };
   list = (cfg.tours || []).filter(t => t.slug).map(t => ({ ...t, db: db[t.slug] || null, when: when(t) }))
     .sort((a, b) => rank[a.when] - rank[b.when] || (a.when === 'past' ? (b.start || '').localeCompare(a.start || '') : (a.start || '').localeCompare(b.start || '')));
-  const { data: ph } = await sb.from('photos').select('id,tour_slug,item_kind,item_id,path,created_at,members(name)').order('created_at', { ascending: false });
-  const photos = ph || [];
-  const need = photos.map(p => p.path.replace(/\.jpg$/, '_t.jpg')).concat(photos.map(p => p.path)).filter(p => !urls[p]);
-  for (let i = 0; i < need.length; i += 100) {
-    const { data: s } = await sb.storage.from('tour-photos').createSignedUrls(need.slice(i, i + 100), 3600 * 6);
-    (s || []).forEach(x => { if (x.signedUrl) urls[x.path] = x.signedUrl; });
-  }
-  render(photos);
+  render([]);
 }
 
 let lastPhotos = [];
@@ -152,7 +145,7 @@ function render(photos) {
   const term = ($('#q').value || '').trim().toLowerCase();
   const shown = list.map((t, i) => [t, i]).filter(([t]) => !term || hay(t).includes(term));
   $('#tours').innerHTML = shown.map(([t, i]) => {
-    const d = t.db, ready = d && d.ready, mem = d ? d.members : [], tp = photos.filter(p => p.tour_slug === t.slug);
+    const d = t.db, ready = d && d.ready;
     return `<section class="card${t.when === 'past' ? ' ended' : ''}" data-i="${i}">
       <div class="tour-h"><span class="ph" style="background-image:url('../${esc(t.cover || '')}')"></span>
         <div><h2>${esc(t.title?.en || t.slug)}</h2><small>${esc(t.place?.en || '')} · ${esc(nice(t.start))} – ${esc(nice(t.end))}</small></div>
@@ -169,16 +162,6 @@ function render(photos) {
         <p class="hint">Needed only once. The code is checked against the expedition before saving; after that travelers join with this code + their name.</p>`}
       <p class="msg" data-msg role="status"></p>
 
-      <h3>Travelers · ${mem.length}</h3>
-      ${mem.length ? `<div class="tbl"><table><thead><tr><th>Name</th><th>Joined</th><th>Last active</th><th>Visits</th><th>Photos</th><th></th></tr></thead><tbody>
-        ${mem.map(m => `<tr><td><b>${esc(m.name)}</b></td><td>${fmt(m.joined)}</td><td>${fmt(m.last_seen)}</td><td>${m.visits}</td><td>${m.photos}</td>
-          <td><button class="btn danger small" type="button" data-rm="${esc(m.id)}" data-name="${esc(m.name)}">Remove</button></td></tr>`).join('')}
-        </tbody></table></div>` : '<p class="empty">No one has joined yet.</p>'}
-
-      <h3>Shared photos · ${tp.length}</h3>
-      ${tp.length ? `<div class="gal">${tp.map(p => `<figure><img loading="lazy" src="${esc(urls[p.path.replace(/\.jpg$/, '_t.jpg')] || urls[p.path] || '')}" data-full="${esc(urls[p.path] || '')}" alt="">
-          <figcaption>${esc(p.members?.name || '')} · ${esc(p.item_id.replace(/-/g, ' '))}</figcaption><button type="button" data-delph="${p.id}" data-path="${esc(p.path)}" aria-label="Delete photo">×</button></figure>`).join('')}</div>`
-        : '<p class="empty">No photos yet.</p>'}
     </section>`;
   }).join('') || `<p class="empty">${term ? 'No expedition matches that search.' : 'No expeditions in tours.json.'}</p>`;
 }
@@ -204,24 +187,8 @@ $('#tours').addEventListener('click', async e => {
     try { await navigator.clipboard.writeText(btn.dataset.copy); btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); } catch (e) {}
     return;
   }
-  if (btn.matches('[data-rm]')) {
-    if (!confirm(`Remove ${btn.dataset.name} from this expedition? Their progress and photos go too.`)) return;
-    const { error } = await sb.rpc('admin_remove_member', { p_member: btn.dataset.rm });
-    if (error) return say(msg, 'Could not remove: ' + error.message, 'err');
-    await load();
-  }
-  if (btn.matches('[data-delph]')) {
-    if (!confirm('Delete this photo for everyone?')) return;
-    const p = btn.dataset.path;
-    await sb.storage.from('tour-photos').remove([p, p.replace(/\.jpg$/, '_t.jpg')]);
-    const { error } = await sb.from('photos').delete().eq('id', +btn.dataset.delph);
-    if (error) return say(msg, 'Could not delete: ' + error.message, 'err');
-    await load();
-  }
-});
-$('#tours').addEventListener('click', e => {
-  const img = e.target.closest('.gal img'); if (!img || !img.dataset.full) return;
-  const z = document.createElement('div'); z.className = 'zoom'; z.innerHTML = `<img src="${esc(img.dataset.full)}" alt="">`; z.onclick = () => z.remove(); document.body.appendChild(z);
+
+
 });
 
 $('#login').addEventListener('submit', async e => {
