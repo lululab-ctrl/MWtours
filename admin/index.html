@@ -67,6 +67,12 @@ td b{color:var(--paper);font-weight:700}
 .gal figcaption{position:absolute;inset-inline:0;bottom:0;padding:18px 8px 6px;font-size:11.5px;line-height:1.3;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.75))}
 .gal button{position:absolute;top:6px;inset-inline-end:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(10,9,8,.75);color:#F7B2A6;font-size:16px;line-height:1;cursor:pointer}
 .empty{color:var(--faint);font-size:14px;margin:0}
+textarea{width:100%;min-height:96px;padding:12px 16px;border-radius:14px;border:1px solid rgba(254,251,241,.28);background:rgba(10,9,8,.45);color:var(--paper);font:16px/1.5 var(--sans);resize:vertical}
+textarea:focus{outline:none;border-color:var(--gold)}
+.add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+@media (max-width:640px){.add{grid-template-columns:1fr}}
+.st{font:600 10.5px/1 var(--label);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.st.in{color:var(--leaf)} .st.wait{color:var(--faint)} .st.extra{color:var(--amber)}
 .zoom{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(5,5,4,.92);cursor:zoom-out}
 .zoom img{max-width:100%;max-height:100%;border-radius:10px}
 </style>
@@ -91,7 +97,7 @@ td b{color:var(--paper);font-weight:700}
   </form>
 
   <div id="app" hidden style="display:grid;gap:22px">
-    <p class="lede">Each expedition: its code, who joined, and the photos they shared. Travelers join with the code + their name; with the same code + name they can open it on any phone or computer.</p>
+    <p class="lede">Each expedition: its code, its travelers, and the photos they shared. Travelers join with their name + the code, on any phone or computer.</p>
     <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
       <input id="q" type="search" placeholder="Search expeditions by name, place or month" aria-label="Search expeditions" autocomplete="off"></div>
     <div id="tours" style="display:grid;gap:22px"></div>
@@ -152,7 +158,10 @@ function render(photos) {
   const term = ($('#q').value || '').trim().toLowerCase();
   const shown = list.map((t, i) => [t, i]).filter(([t]) => !term || hay(t).includes(term));
   $('#tours').innerHTML = shown.map(([t, i]) => {
-    const d = t.db, ready = d && d.ready, mem = d ? d.members : [], tp = photos.filter(p => p.tour_slug === t.slug);
+    const d = t.db, ready = d && d.ready, mem = d ? d.members : [], trav = (d && d.travelers) || [], tp = photos.filter(p => p.tour_slug === t.slug);
+    // the list Matan added (with who joined), then anyone who joined without being on it
+    const rows = trav.map(r => ({ name: r.name, t: r, m: mem.find(m => m.traveler_id === r.id) }))
+      .concat(mem.filter(m => !m.traveler_id || !trav.some(r => r.id === m.traveler_id)).map(m => ({ name: m.name, m })));
     return `<section class="card${t.when === 'past' ? ' ended' : ''}" data-i="${i}">
       <div class="tour-h"><span class="ph" style="background-image:url('../${esc(t.cover || '')}')"></span>
         <div><h2>${esc(t.title?.en || t.slug)}</h2><small>${esc(t.place?.en || '')} · ${esc(nice(t.start))} – ${esc(nice(t.end))}</small></div>
@@ -162,18 +171,23 @@ function render(photos) {
       <h3>${ready ? 'Expedition code' : 'Connect this expedition'}</h3>
       ${ready ? `<div class="codebox">${d.code ? `<span class="codeval">${esc(d.code)}</span><button class="btn ghost small" type="button" data-copy="${esc(d.code)}">Copy</button>`
             : '<span class="hint">Connected. Run the "show code" update in Supabase to see the code here.</span>'}</div>
-        <p class="hint">Travelers join with this code + their name.</p>`
+        `
       : `<div class="row one"><label>The code this expedition opens with today<input class="code" data-secret spellcheck="false" autocapitalize="characters" placeholder="e.g. LYNX-2026" value="${esc(saved(t.slug))}"></label>
           <button class="btn" type="button" data-connect>Connect</button></div>
         ${saved(t.slug) ? '<p class="msg ok" style="margin:0">Found on this device: this browser already opened the expedition, so its code is filled in. Tap Connect.</p>' : ''}
         <p class="hint">Needed only once. The code is checked against the expedition before saving; after that travelers join with this code + their name.</p>`}
       <p class="msg" data-msg role="status"></p>
 
-      <h3>Travelers · ${mem.length}</h3>
-      ${mem.length ? `<div class="tbl"><table><thead><tr><th>Name</th><th>Joined</th><th>Last active</th><th>Visits</th><th>Photos</th><th></th></tr></thead><tbody>
-        ${mem.map(m => `<tr><td><b>${esc(m.name)}</b></td><td>${fmt(m.joined)}</td><td>${fmt(m.last_seen)}</td><td>${m.visits}</td><td>${m.photos}</td>
-          <td><button class="btn danger small" type="button" data-rm="${esc(m.id)}" data-name="${esc(m.name)}">Remove</button></td></tr>`).join('')}
-        </tbody></table></div>` : '<p class="empty">No one has joined yet.</p>'}
+      <h3>Travelers · ${trav.length}</h3>
+      ${ready ? `<div class="add"><label>Add travelers' full names, one per line<textarea data-names spellcheck="false" placeholder="Dana Levi&#10;Maria Santos"></textarea></label>
+          <button class="btn" type="button" data-addnames>Add</button></div>
+        <p class="hint">${trav.length ? 'Only these travelers can join. They type their first, middle or last name (or all of them), then the code.' : 'While the list is empty, anyone with the code can join.'}</p>` : ''}
+      ${rows.length ? `<div class="tbl"><table><thead><tr><th>Name</th><th>Status</th><th>Last active</th><th>Photos</th><th></th></tr></thead><tbody>
+        ${rows.map(x => `<tr><td><b>${esc(x.name)}</b></td>
+          <td><span class="st ${x.m ? (x.t ? 'in' : 'extra') : 'wait'}">${x.m ? (x.t ? 'Joined' : 'Not on list') : 'Not joined yet'}</span></td>
+          <td>${x.m ? fmt(x.m.last_seen) : '–'}</td><td>${x.m ? x.m.photos : '–'}</td>
+          <td><button class="btn danger small" type="button" ${x.t ? `data-rmt="${esc(x.t.id)}"` : `data-rm="${esc(x.m.id)}"`} data-name="${esc(x.name)}">Remove</button></td></tr>`).join('')}
+        </tbody></table></div>` : '<p class="empty">No travelers yet.</p>'}
 
       <h3>Shared photos · ${tp.length}</h3>
       ${tp.length ? `<div class="gal">${tp.map(p => `<figure><img loading="lazy" src="${esc(urls[p.path.replace(/\.jpg$/, '_t.jpg')] || urls[p.path] || '')}" data-full="${esc(urls[p.path] || '')}" alt="">
@@ -203,6 +217,22 @@ $('#tours').addEventListener('click', async e => {
   if (btn.matches('[data-copy]')) {
     try { await navigator.clipboard.writeText(btn.dataset.copy); btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); } catch (e) {}
     return;
+  }
+  if (btn.matches('[data-addnames]')) {
+    const names = card.querySelector('[data-names]').value.split(/[\n;]+/).map(n => n.trim()).filter(Boolean);
+    if (!names.length) return say(msg, 'Type at least one name.', 'err');
+    btn.disabled = true;
+    const { data, error } = await sb.rpc('admin_add_travelers', { p_slug: t.slug, p_names: names });
+    btn.disabled = false;
+    if (error) return say(msg, /function/.test(error.message) ? 'Run supabase-update-travelers.txt in Supabase first.' : 'Could not add: ' + error.message, 'err');
+    await load(); say(document.querySelector(`.card[data-i="${card.dataset.i}"] [data-msg]`), data === names.length ? `Added ${data}.` : `Added ${data} (the others were already on the list).`, 'ok');
+    return;
+  }
+  if (btn.matches('[data-rmt]')) {
+    if (!confirm(`Remove ${btn.dataset.name} from this expedition's list? If they joined, their access, progress and photos go too.`)) return;
+    const { error } = await sb.rpc('admin_remove_traveler', { p_id: btn.dataset.rmt });
+    if (error) return say(msg, 'Could not remove: ' + error.message, 'err');
+    await load(); return;
   }
   if (btn.matches('[data-rm]')) {
     if (!confirm(`Remove ${btn.dataset.name} from this expedition? Their progress and photos go too.`)) return;

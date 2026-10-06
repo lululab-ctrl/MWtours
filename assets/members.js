@@ -38,12 +38,12 @@ let member = null; try { member = JSON.parse(ls.get(ME) || 'null'); } catch (e) 
 
 // ---------- words ----------
 const T = {
-  he: { name: 'שם', namePh: 'שם', needName: 'הקלידו את השם שלכם.', busy: 'פותחים…', wrong: 'הקוד לא תואם. בדקו אותו בהודעה ונסו שוב.',
+  he: { name: 'שם', namePh: 'שם', needName: 'הקלידו את השם שלכם.', notListed: 'השם הזה לא ברשימת המטיילים של המסע. כתבו אותו כמו שמתן רשם אותו.', ambiguous: 'יש יותר ממטייל אחד בשם הזה. הוסיפו גם את שם המשפחה.', again: 'הקלידו שוב את השם ואת הקוד.', newCode: 'קוד המסע השתנה. הקלידו את השם ואת הקוד החדש.', busy: 'פותחים…', wrong: 'הקוד לא תואם. בדקו אותו בהודעה ונסו שוב.',
         many: 'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.', nameHint: 'באותו קוד ושם תוכלו להיכנס מכל טלפון או מחשב.',
         photos: 'תמונות הקבוצה', add: 'הוספת תמונה', adding: 'מעלים…', none: 'עדיין אין תמונות. אולי שלכם תהיה הראשונה?', you: 'אתם',
         del: 'מחיקה', delQ: 'למחוק את התמונה?', close: 'סגירה', prev: 'הקודמת', next: 'הבאה', failed: 'ההעלאה לא הצליחה. נסו שוב כשיש קליטה.',
         offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', yours: 'הצילום שלכם', others: 'צילומים של אחרים', othersN: n => n === 1 ? 'צילום 1' : `${n} צילומים`, replace: 'החלפה', replaced: 'הצילום שלכם הוחלף', codeChanged: 'קוד המסע השתנה. צאו והיכנסו שוב עם הקוד החדש.', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
-  en: { name: 'Name', namePh: 'Name', needName: 'Type your name.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
+  en: { name: 'Name', namePh: 'Name', needName: 'Type your name.', notListed: "That name isn't on this expedition's traveler list. Type it the way Matan has it.", ambiguous: 'More than one traveler has that name. Add your last name too.', again: 'Please enter your name and the code again.', newCode: 'The expedition code has changed. Enter your name and the new code.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
         many: 'Too many tries. Please wait a few minutes.', nameHint: 'With the same code and name you can open it on any phone or computer.',
         photos: 'Group photos', add: 'Add photo', adding: 'Uploading…', none: 'No photos yet. Yours could be the first.', you: 'You',
         del: 'Delete', delQ: 'Delete this photo?', close: 'Close', prev: 'Previous', next: 'Next', failed: "The upload didn't work. Try again when you have signal.",
@@ -138,6 +138,8 @@ function mountGate() {
   inp.setAttribute('autocapitalize', 'words'); inp.className = 'mw-name';
   const first = form.querySelector('label[for="code"]');
   form.insertBefore(inp, first); form.insertBefore(lab, inp);
+  { const why = sessionStorage.getItem('mw-relock-' + SLUG), err = $('#gate-err');
+    if (why && err) { err.textContent = w[why] || w.again; sessionStorage.removeItem('mw-relock-' + SLUG); (inp.value ? code : inp).focus(); } }
 
   form.addEventListener('submit', async e => {
     if (bypass) { bypass = false; return; }               // let the page open it with the key
@@ -154,8 +156,9 @@ function mountGate() {
       if (r && r.error) {
         btn.disabled = false; label.textContent = was;
         if (r.error === 'tour_not_ready') return local();
-        err.textContent = r.error === 'too_many_attempts' ? w.many : r.error === 'bad_name' ? w.needName : w.wrong;
-        form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); code.select();
+        const nameErr = { bad_name: w.needName, name_not_listed: w.notListed, name_ambiguous: w.ambiguous }[r.error];
+        err.textContent = r.error === 'too_many_attempts' ? w.many : nameErr || w.wrong;
+        form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); (nameErr ? inp : code).select();
         return;
       }
       ls.set(NAME, name);
@@ -178,13 +181,25 @@ async function resume() {
   try {
     await timeout(session(), 9000);
     const r = await timeout(rpc('resume_tour', { p_slug: SLUG }), 9000);
-    if (!r && ls.get(NAME) && ls.get(KEY + '-code')) {
-      const j = await rpc('join_tour', { p_slug: SLUG, p_code: ls.get(KEY + '-code'), p_name: ls.get(NAME) }).catch(() => null);
-      if (j && !j.error) { member = { id: j.member_id, name: j.name }; ls.set(ME, JSON.stringify(member)); viewer = true; save(); decorate(true); loadPhotos(); return; }
+    const code = ls.get(KEY + '-code');
+    if (!r && code) {
+      // opened here without being registered (e.g. before names were asked, or offline): join with the saved name,
+      // and if that isn't possible, back to the name + code screen
+      const j = ls.get(NAME) ? await rpc('join_tour', { p_slug: SLUG, p_code: code, p_name: ls.get(NAME) }) : null;
+      if (j && !j.error) {
+        member = { id: j.member_id, name: j.name }; ls.set(ME, JSON.stringify(member)); viewer = true;
+        if (applyState(j.state)) { await save(); return reopen(); }
+        save(); decorate(true); loadPhotos(); return;
+      }
+      const err = j && j.error;
+      if (err === 'name_not_listed') return relock('notListed');
+      if (err === 'name_ambiguous') return relock('ambiguous');
+      if (err === 'wrong_code') return relock('newCode');
+      if (!j) { const v = await rpc('view_tour', { p_slug: SLUG, p_code: code }); if (v && v.ok) return relock('again'); }
     }
     if (!r) {
       if (member) { member = null; ls.set(ME, 'null'); }
-      await viewWithCode();                     // not named yet: the code alone lets this browser see the group's shots
+      await viewWithCode();                     // expedition not connected yet: the page works on this device only
       decorate(true); if (viewer) loadPhotos(); return;
     }
     member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member)); viewer = true;
@@ -195,6 +210,14 @@ async function resume() {
     save();
     decorate(true); loadPhotos();
   } catch (e) { decorate(false); /* offline: the page carries on with what this device has */ }
+}
+// close the expedition on this browser and show the name + code screen (the traveler's lists stay on the device)
+function relock(why) {
+  const flag = 'mw-relocked-' + SLUG;
+  if (Date.now() - (+sessionStorage.getItem(flag) || 0) < 15000) return;
+  sessionStorage.setItem(flag, String(Date.now())); sessionStorage.setItem('mw-relock-' + SLUG, why);
+  localStorage.removeItem(KEY + '-code'); localStorage.removeItem(KEY + '-viewer'); localStorage.removeItem(ME);
+  location.replace(location.pathname + location.search);
 }
 // anyone who has the expedition open (its code is saved here) may look at the group's shots
 let viewer = false;
@@ -390,7 +413,7 @@ function askName() {
     try {
       await timeout(session(), 9000);
       const r = await timeout(rpc('join_tour', { p_slug: SLUG, p_code: ls.get(KEY + '-code') || '', p_name: name }), 9000);
-      if (r && r.error) { go.disabled = false; go.textContent = w.go; msg.textContent = r.error === 'tour_not_ready' ? w.notReady : r.error === 'too_many_attempts' ? w.many : r.error === 'wrong_code' ? w.codeChanged : w.tryLater + ' (' + r.error + ')'; return; }
+      if (r && r.error) { go.disabled = false; go.textContent = w.go; msg.textContent = r.error === 'tour_not_ready' ? w.notReady : r.error === 'too_many_attempts' ? w.many : r.error === 'wrong_code' ? w.codeChanged : r.error === 'name_not_listed' ? w.notListed : r.error === 'name_ambiguous' ? w.ambiguous : r.error === 'bad_name' ? w.needName : w.tryLater + ' (' + r.error + ')'; return; }
       ls.set(NAME, name); member = { id: r.member_id, name: r.name }; ls.set(ME, JSON.stringify(member)); viewer = true;
       names[member.id] = member.name;
       close();

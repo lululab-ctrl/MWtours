@@ -14,7 +14,8 @@ commit finished work straight to `main`; there is no build step.
 - `assets/members.js`: loaded by every tour. Traveler name on the code screen, Supabase sync of lists and
   progress, group photo uploads on the Field cards. When you change it, bump `?v=` in the three tour pages.
 - `admin/`: Matan's admin (Supabase login): connect an expedition once with its code, see the code,
-  travelers, shared photos.
+  add the traveler list (a traveler joins with a name on it: first, middle or last name, then the code),
+  shared photos.
 - `assets/`: favicon set (same as the MWP site), logo, contour image.
 - Supabase project `uiydebfzuxnxjqcnrylv`. Setup and updates are plain `.txt` files (not `.sql`).
 
