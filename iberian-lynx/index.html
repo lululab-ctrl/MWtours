@@ -994,12 +994,31 @@ function personalize(t) {
   t.days.sort((a, b) => a.n - b.n);
   return t;
 }
+// days spent in the same place share one map frame; stepping through them would only zoom.
+// Spread such a run across the place, west to east, so every day visibly moves to its own part of it.
+function spreadDays(t) {
+  const frame = d => d.steps && d.steps.length === 1 && !(d.steps[0].legs || []).length && d.steps[0].bbox ? d.steps[0].bbox.join() : null;
+  for (let i = 0; i < t.days.length;) {
+    const k = frame(t.days[i]); let j = i + 1;
+    while (k && j < t.days.length && frame(t.days[j]) === k) j++;
+    const n = j - i;
+    if (k && n > 1) {
+      const [x0, y0, x1, y1] = t.days[i].steps[0].bbox, w = (x1 - x0) * 0.62, h = (y1 - y0) * 0.62, cy = (y0 + y1) / 2;
+      for (let m = 0; m < n; m++) {
+        const cx = x0 + w / 2 + (x1 - x0 - w) * (m / (n - 1));
+        t.days[i + m].steps = [{ ...t.days[i + m].steps[0], bbox: [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2] }];
+      }
+    }
+    i = j;
+  }
+  return t;
+}
 async function tryCode(code, quiet) {
   const err = $('#gate-err'), btn = $('#gate-btn'), form = $('#gate-form');
   if (!norm(code)) { if (!quiet) err.textContent = L.gateEmpty; return false; }
   btn.disabled = true; btn.firstElementChild.textContent = L.gateBusy; err.textContent = '';
   try {
-    T = personalize(await decrypt(code));
+    T = spreadDays(personalize(await decrypt(code)));
     for (const l of ['he', 'en']) deepMerge(UI[l], T.ui && T.ui[l]);
   } catch (e) {
     if (!quiet) { err.textContent = L.gateErr; form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); $('#code').select(); }
