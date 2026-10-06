@@ -523,6 +523,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
 .sunin{display:inline-flex;align-items:center;gap:6px;color:var(--amber);font-weight:700}
 .hero{position:relative;margin:calc(-1 * (var(--top) + env(safe-area-inset-top) + 36px)) -16px 0;min-height:clamp(320px,50vh,540px);display:grid;align-items:end;overflow:hidden;isolation:isolate}
 .hero>figure{position:absolute;inset:0;margin:0;z-index:-1;background:#14120F}
+.hero.tall{min-height:clamp(440px,72vh,700px)}   /* a photo of people: room for their faces above the title */
 .hero>figure img{display:block;width:100%;height:100%;object-fit:cover;animation:kb 20s ease-out forwards}
 .hero>figure::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,8,.6) 0,rgba(10,9,8,.08) 26%,rgba(10,9,8,.3) 58%,var(--night) 100%)}
 /* keep the title clear of the top bar and the floating back button */
@@ -666,7 +667,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
   .mapctl .icbtn{width:38px;height:38px}
   .mapctl .icbtn .ic{width:18px;height:18px}
   /* phones: the photo whole on top, the words below it over its faded foot */
-  .hero{display:block;min-height:0;background:var(--night);padding-top:0}
+  .hero,.hero.tall{display:block;min-height:0;background:var(--night);padding-top:0}
   .hero>figure{position:relative;inset:auto;aspect-ratio:1/1;max-height:62vh;margin-bottom:-84px;overflow:hidden}
   .hero .in{position:relative}
   #pop{left:10px!important;right:10px;top:auto!important;bottom:calc(var(--bar) + env(safe-area-inset-bottom) + 10px);width:auto;max-height:min(68vh,580px)}
@@ -1960,7 +1961,7 @@ function heroHTML(room, kicker, title, lede, extra = '') {
   if (!h) return `<div class="wrap"><header class="rh">${head}</header></div>`;
   // on a wide screen the words sit beside the subject, on the side the photo leaves open
   const side = room === 'info' ? 'side-s' : 'side-' + (h.side || (h.focus && h.focus[0] > 0.5 ? 'l' : 'r'));   // Good to know: lined up with the text below
-  return `<header class="hero ${side}"><figure><img src="${esc(h.src)}" alt="" decoding="async"${objPos(h.focus)}></figure><div class="in">${head}</div></header>`;
+  return `<header class="hero ${side}${h.tall ? ' tall' : ''}"><figure><img src="${esc(h.src)}" alt="" decoding="async"${objPos(h.focus)}></figure><div class="in">${head}</div></header>`;
 }
 
 // ---------- stories room ----------
