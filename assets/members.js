@@ -299,18 +299,19 @@ document.addEventListener('visibilitychange', () => {
 // on each card's picture: your shot (or a + to add it), and the others' shots as a small stack
 function overlay(tile) {
   const it = itemOf(tile), list = (member || viewer) ? forItem(it) : [], w = W();
-  const mine = member && list.find(p => p.member_id === member.id), others = list.filter(p => p !== mine);
+  const mine = member && list.find(p => p.member_id === member.id);
   const yours = AS ? member.name.split(' ')[0] : w.yours;
-  // your shot fills the picture (full size, kept on the device); the others' shots sit on it as small circles
-  let top = '';
+  // the whole picture opens everyone's shots (with who took each); your own shot fills it, a + adds yours
+  const count = list.length ? `<span class="mwp-cnt">${esc(w.othersN(list.length))}</span>` : '';
+  let html = '';
   if (mine) {
     const big = url(mine.path); if (!big) wantFull.add(mine.path);
-    top = `<button type="button" class="mwp-mine" data-mwp-mine aria-label="${esc(yours)}" title="${esc(yours)}" style="background-image:url('${esc(big || url(thumbOf(mine.path)))}')"><span>${esc(yours)}</span></button>`;
-  } else if (!AS) {
-    top = `<button type="button" class="mwp-plus" data-mwp-add aria-label="${esc(w.add)}" title="${esc(w.add)}"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>`;
+    html = `<button type="button" class="mwp-mine" data-mwp-open aria-label="${esc(w.others)}" style="background-image:url('${esc(big || url(thumbOf(mine.path)))}')"><span class="mwp-you">${esc(yours)}</span>${list.length > 1 ? count : ''}</button>`;
+  } else if (list.length) {
+    html = `<button type="button" class="mwp-open" data-mwp-open aria-label="${esc(w.others + ': ' + list.length)}">${count}</button>`;
   }
-  const circles = others.slice(-3).reverse().map(p => `<i style="background-image:url('${esc(url(thumbOf(p.path)))}')"></i>`).join('');
-  return top + (others.length ? `<button type="button" class="mwp-stack${mine || AS ? ' up' : ''}" data-mwp-others aria-label="${esc(w.others + ': ' + others.length)}" title="${esc(w.others + ' · ' + w.othersN(others.length))}">${circles}${others.length > 3 ? `<b>+${others.length - 3}</b>` : ''}</button>` : '');
+  if (!mine && !AS) html += `<button type="button" class="mwp-plus" data-mwp-add aria-label="${esc(w.add)}" title="${esc(w.add)}"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg></button>`;
+  return html;
 }
 // your own shots at full size, fetched once and then served from the browser's cache
 const wantFull = new Set(); let fullT = 0;
@@ -378,19 +379,19 @@ async function upload(tile, file) {
 }
 
 // full-screen viewer: your shot (replace / delete), or the others' shots one by one
-function showShots(tile, list, mine) {
+function showShots(tile, list) {
   const title = tile.querySelector('h4')?.textContent || '';
   if (!list.length) return;
   let i = 0;
   const v = document.createElement('div'); v.className = 'mwp-v'; v.dir = document.documentElement.dir || 'rtl';
   v.setAttribute('role', 'dialog'); v.setAttribute('aria-modal', 'true');
   const draw = async () => {
-    const p = list[i], w = W();
+    const p = list[i], w = W(), isMine = !!member && p.member_id === member.id;
     if (!url(p.path)) { try { await sign([p.path]); } catch (e) {} }   // full size only now
     const when = new Date(p.created_at).toLocaleDateString(document.documentElement.lang || 'he', { day: 'numeric', month: 'short' });
     v.innerHTML = `<figure><img src="${esc(url(p.path) || url(thumbOf(p.path)))}" alt="${esc(title)}"></figure>
-      <div class="mwp-bar"><div><b>${esc(title)}</b><small>${esc(mine ? (AS ? member.name : w.you) : whoOf(p))} · ${esc(when)}${list.length > 1 ? ' · ' + esc(w.of(i + 1, list.length)) : ''}</small></div>
-      ${mine && !AS ? `<button type="button" class="mwp-rep">${esc(w.replace)}</button><button type="button" class="mwp-del">${esc(w.del)}</button>` : ''}</div>
+      <div class="mwp-bar"><div><b>${esc(isMine ? (AS ? member.name : w.you) : whoOf(p))}</b><small>${esc(title)} · ${esc(when)}${list.length > 1 ? ' · ' + esc(w.of(i + 1, list.length)) : ''}</small></div>
+      ${isMine && !AS ? `<button type="button" class="mwp-rep">${esc(w.replace)}</button><button type="button" class="mwp-del">${esc(w.del)}</button>` : ''}</div>
       <button type="button" class="mwp-x" aria-label="${esc(w.close)}">×</button>
       ${list.length > 1 ? `<button type="button" class="mwp-nav p" aria-label="${esc(w.prev)}">‹</button><button type="button" class="mwp-nav n" aria-label="${esc(w.next)}">›</button>` : ''}`;
     v.querySelector('.mwp-x').onclick = close;
@@ -453,15 +454,18 @@ let pickFor = null;
 picker.addEventListener('change', () => { const f = picker.files && picker.files[0]; if (f && pickFor) upload(pickFor, f); picker.value = ''; });
 
 document.addEventListener('click', e => {
-  const add = e.target.closest('[data-mwp-add]'), mineB = e.target.closest('[data-mwp-mine]'), oth = e.target.closest('[data-mwp-others]');
-  if (!add && !mineB && !oth) return;
+  const add = e.target.closest('[data-mwp-add]'), open = e.target.closest('[data-mwp-open]');
+  if (!add && !open) return;
   const tile = e.target.closest('.ftile'); if (!tile) return;
   e.preventDefault(); e.stopPropagation();
   if (tile.querySelector('.mwp-ov')?.dataset.busy) return;
   const it = itemOf(tile);
   if (add) { if (!member) return askName(); pickFor = tile; picker.click(); }
-  else if (mineB) showShots(tile, forItem(it).filter(p => p.member_id === member.id), true);
-  else showShots(tile, forItem(it).filter(p => !member || p.member_id !== member.id).reverse(), false);
+  else {
+    // yours first, then the others, newest first
+    const all = forItem(it).slice().reverse(), me = member && all.filter(p => p.member_id === member.id);
+    showShots(tile, me && me.length ? me.concat(all.filter(p => p.member_id !== member.id)) : all);
+  }
 }, true);
 
 // ---------- look ----------
@@ -496,18 +500,15 @@ const css = `
 .mwp-ov.busy .mwp-plus svg{animation:mwpSpin .9s linear infinite}
 @keyframes mwpSpin{to{transform:rotate(360deg)}}
 .mwp-mine{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:inherit;background:#26221D center/cover no-repeat;cursor:zoom-in}
-.mwp-mine span{position:absolute;top:10px;inset-inline-start:10px;padding:3px 9px;border-radius:64px;background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#FEFBF1;font:600 11px/1.4 "Google Sans",sans-serif;white-space:nowrap}
+.mwp-open{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:inherit;background:none;cursor:zoom-in}
+.mwp-cnt{position:absolute;bottom:10px;inset-inline-end:10px;padding:4px 10px;border-radius:64px;background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#FEFBF1;font:700 12px/1.3 "Google Sans",sans-serif;white-space:nowrap}
+.mwp-mine .mwp-you{position:absolute;top:10px;inset-inline-start:10px;padding:3px 9px;border-radius:64px;background:rgba(10,9,8,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#FEFBF1;font:600 11px/1.4 "Google Sans",sans-serif;white-space:nowrap}
 .mwp-ov.busy .mwp-mine{opacity:.5}
 .mwp-rep{min-height:38px;padding-inline:16px;border-radius:64px;border:1px solid rgba(244,175,86,.6);background:none;color:#F4AF56;font:700 13px "Google Sans",sans-serif;cursor:pointer}
 .mw-as{position:fixed;z-index:60;inset-inline:0;bottom:calc(84px + env(safe-area-inset-bottom));margin:0 auto;width:max-content;max-width:calc(100% - 32px);display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;border-radius:64px;background:rgba(10,9,8,.86);border:1px solid #F4AF56;color:#FEFBF1;font:600 13px/1.3 "Google Sans",sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 [dir=rtl] .mw-as{padding:8px 16px 8px 8px}
 .mw-as.warn{border-color:#F08A7A}
 .mw-as a{flex:none;padding:6px 14px;border-radius:64px;background:#F4AF56;color:#0A0908;text-decoration:none;font-weight:700}
-.mwp-stack{position:absolute;bottom:10px;inset-inline-end:10px;display:flex;align-items:center;padding:0;border:0;background:none;color:#FEFBF1;cursor:pointer;font:700 12px/1 "Google Sans",sans-serif}
-.mwp-stack.up{bottom:auto;top:10px}
-.mwp-stack i,.mwp-stack b{width:36px;height:36px;border-radius:50%;border:2px solid rgba(254,251,241,.9);background:#26221D center/cover no-repeat;margin-inline-start:-10px;box-shadow:0 3px 10px rgba(0,0,0,.4)}
-.mwp-stack i:first-child{margin-inline-start:0}
-.mwp-stack b{display:grid;place-items:center;background:rgba(10,9,8,.75)}
 .mwp{display:grid;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid rgba(254,251,241,.12)}
 .mwp-h{display:flex;align-items:center;gap:8px;font:600 11px/1 Montserrat,"Google Sans",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#E4AA7C}
 [dir=rtl] .mwp-h{font:600 13px/1 "Google Sans",sans-serif;letter-spacing:0}
