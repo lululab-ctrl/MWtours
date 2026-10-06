@@ -42,12 +42,12 @@ const T = {
         many: 'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.', nameHint: 'באותו קוד ושם תוכלו להיכנס מכל טלפון או מחשב.',
         photos: 'תמונות הקבוצה', add: 'הוספת תמונה', adding: 'מעלים…', none: 'עדיין אין תמונות. אולי שלכם תהיה הראשונה?', you: 'אתם',
         del: 'מחיקה', delQ: 'למחוק את התמונה?', close: 'סגירה', prev: 'הקודמת', next: 'הבאה', failed: 'ההעלאה לא הצליחה. נסו שוב כשיש קליטה.',
-        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
+        offline: 'אין חיבור כרגע. התמונות יופיעו כשתחזור הקליטה.', added: 'התמונה נוספה לקבוצה', byName: 'נכנסתם כבר במכשיר אחר? מספיק להקליד את השם.', unknownName: 'השם הזה עוד לא נכנס למסע. הקלידו גם את הקוד.', ambiguous: 'יש כמה עם השם הזה. הקלידו שם מלא או את הקוד.', joinFirst: 'הוסיפו את השם שלכם כדי לראות ולשתף את תמונות הקבוצה.', whoTitle: 'מה השם שלכם?', whoText: 'כך הקבוצה תדע מי צילם. פעם אחת בלבד במכשיר הזה.', go: 'המשך', joined: 'מעולה! עכשיו לחצו על + כדי להוסיף תמונה.', notReady: 'שיתוף תמונות עוד לא הופעל במסע הזה.', tryLater: 'לא הצלחנו להתחבר. נסו שוב כשיש קליטה.', of: (a, b) => `${a} מתוך ${b}` },
   en: { name: 'Name', namePh: 'Name', needName: 'Type your name.', busy: 'Opening…', wrong: "That code doesn't match. Check it in the message and try again.",
         many: 'Too many tries. Please wait a few minutes.', nameHint: 'With the same code and name you can open it on any phone or computer.',
         photos: 'Group photos', add: 'Add photo', adding: 'Uploading…', none: 'No photos yet. Yours could be the first.', you: 'You',
         del: 'Delete', delQ: 'Delete this photo?', close: 'Close', prev: 'Previous', next: 'Next', failed: "The upload didn't work. Try again when you have signal.",
-        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap + to add a photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
+        offline: "You're offline. Photos will appear when you have signal again.", added: 'Photo added for the group', byName: 'Joined on another device? Your name is enough.', unknownName: 'This name hasn’t joined this expedition yet. Type the code too.', ambiguous: 'More than one traveler has this name. Type your full name or the code.', joinFirst: 'Add your name to see and share the group’s photos.', whoTitle: 'What’s your name?', whoText: 'So the group knows who took each photo. Only once on this device.', go: 'Continue', joined: 'You’re in. Now tap + to add a photo.', notReady: 'Photo sharing isn’t switched on for this expedition yet.', tryLater: 'Couldn’t connect. Please try again when you have signal.', of: (a, b) => `${a} of ${b}` },
 };
 const W = () => T[(document.documentElement.lang || 'he').startsWith('en') ? 'en' : 'he'];
 
@@ -137,23 +137,28 @@ function mountGate() {
   inp.setAttribute('autocapitalize', 'words'); inp.className = 'mw-name';
   const first = form.querySelector('label[for="code"]');
   form.insertBefore(inp, first); form.insertBefore(lab, inp);
+  const by = document.createElement('p'); by.className = 'mw-hint'; by.id = 'mw-byname'; by.textContent = w.byName;
+  $('#gate-err').after(by);
 
   form.addEventListener('submit', async e => {
     if (bypass) { bypass = false; return; }               // let the page open it with the key
     e.preventDefault(); e.stopImmediatePropagation();
     const err = $('#gate-err'), btn = $('#gate-btn'), label = btn.firstElementChild, w = W();
     const local = () => { bypass = true; form.requestSubmit(); };   // no Supabase: the page tries the code itself
-    if (!norm(code.value)) return local();
     const name = inp.value.trim().replace(/\s+/g, ' ');
+    const byName = !norm(code.value);
+    if (byName && !name) return local();                    // nothing typed: the page asks for the code
     if (!name) { err.textContent = w.needName; inp.focus(); return; }
     btn.disabled = true; const was = label.textContent; label.textContent = w.busy; err.textContent = '';
     try {
       await timeout(session(), 9000);
-      const r = await timeout(rpc('join_tour', { p_slug: SLUG, p_code: code.value, p_name: name }), 9000);
+      const r = await timeout(byName ? rpc('join_by_name', { p_slug: SLUG, p_name: name })
+        : rpc('join_tour', { p_slug: SLUG, p_code: code.value, p_name: name }), 9000);
       if (r && r.error) {
         btn.disabled = false; label.textContent = was;
         if (r.error === 'tour_not_ready') return local();
-        err.textContent = r.error === 'too_many_attempts' ? w.many : r.error === 'bad_name' ? w.needName : w.wrong;
+        err.textContent = r.error === 'too_many_attempts' ? w.many : r.error === 'bad_name' ? w.needName
+          : r.error === 'unknown_name' ? w.unknownName : r.error === 'ambiguous' ? w.ambiguous : w.wrong;
         form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); code.select();
         return;
       }
@@ -166,6 +171,7 @@ function mountGate() {
       if (!reopen()) { code.value = r.secret; local(); }
     } catch (ex) {
       btn.disabled = false; label.textContent = was;
+      if (byName) { err.textContent = W().tryLater; return; }   // offline: the name alone can't be checked
       local();
     }
   }, true);
@@ -404,6 +410,7 @@ const css = `
 // ---------- start ----------
 function relabel() {
   const w = W(), l = $('#mw-name-l'), i = $('#mw-name'), h = $('#mw-hint');
+  { const b = $('#mw-byname'); if (b) b.textContent = w.byName; }
   if (l) l.textContent = w.name; if (i) i.placeholder = w.namePh; if (h) h.textContent = w.nameHint;
   decorate(true);
 }
