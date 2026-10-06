@@ -769,6 +769,7 @@ figure.ph figcaption{position:absolute;inset-inline-end:10px;bottom:8px;font:500
         <div class="mapctl">
           <button class="icbtn" type="button" id="ctl-all"><svg class="ic"><use href="#i-globe"/></svg></button>
           <button class="icbtn" type="button" id="ctl-assam"><svg class="ic"><use href="#i-target"/></svg></button>
+          <button class="icbtn" type="button" id="ctl-opening"><svg class="ic"><use href="#i-play"/></svg></button>
         </div>
         <div class="dock" id="dock">
           <article class="daycard" id="daycard" aria-live="polite"></article>
@@ -1809,7 +1810,7 @@ function renderAll() {
   const title = T.title[lang];
   $('#top-name').textContent = `${title.a} ${title.b}`;
   $$('#tabs button').forEach(b => { b.lastElementChild.textContent = L.tabs[b.dataset.tab]; });
-  [['#ctl-all', L.all], ['#ctl-assam', L.assam]].forEach(([s, t]) => { $(s).setAttribute('aria-label', t); $(s).title = t; });
+  [['#ctl-opening', L.opening], ['#ctl-all', L.all], ['#ctl-assam', L.assam]].forEach(([s, t]) => { $(s).setAttribute('aria-label', t); $(s).title = t; });
   $('#credit').textContent = [GEO.credit, 'Terrain Tiles (AWS)', 'Natural Earth'].filter(Boolean).join(' · ');
   closePop();
   renderChip(); renderTimeline(); renderCard(); renderStories(); renderField(); renderInfo(); renderLeader(); renderFilter(); buildOverlay(); markStops(); render();
@@ -1969,6 +1970,9 @@ async function togglePlay() {
   }
   if (run === playRun && playing) setPlaying(false);
 }
+// the opening animation, again whenever you like
+$('#ctl-opening').hidden = reduce;
+$('#ctl-opening').addEventListener('click', () => { closePop(); journey(); });
 $('#ctl-all').addEventListener('click', () => { stopAuto(); settleLegs(-1); closePop(); fly(fit(T.views.all)); });
 $('#ctl-assam').addEventListener('click', () => { stopAuto(); settleLegs(-1); closePop(); fly(fit(T.views.assam)); });
 
